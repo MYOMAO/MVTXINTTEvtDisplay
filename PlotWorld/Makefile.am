@@ -20,9 +20,9 @@ AM_LDFLAGS = \
 pkginclude_HEADERS = \
   PlotWorld.h 
 
-
 libhfmltrigger_la_SOURCES = \
   PlotWorld.C 
+
 
 libhfmltrigger_la_LIBADD = \
   -lfun4all \

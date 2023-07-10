@@ -45,7 +45,7 @@ R__LOAD_LIBRARY(libFermimotionAfterburner.so)
 namespace Enable
 {
 
-	int DetectorType = 1;
+	int DetectorType = 0;
 }
 
 

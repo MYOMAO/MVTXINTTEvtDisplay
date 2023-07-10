@@ -60,6 +60,11 @@
 #include <iostream>
 #include <trackbase/ActsSurfaceMaps.h>
 
+
+
+
+
+
 using namespace std;
 
 PlotWorld::PlotWorld(std::string filename, int DetType)
@@ -170,7 +175,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 			int NEvents = tree_fhrana->GetEntries();
 
-			NEvents = 100;
+			NEvents = 10000;
 
 
 			int EventID;
@@ -266,31 +271,50 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					auto hitsetkey = MvtxDefs::genHitSetKey(NowLayer,NowStave,NowChip,0);
 
 
-					//	unsigned int ReGetChip = MvtxDefs::getChipId(hitsetkey);
+//					unsigned int ReGetChip = MvtxDefs::getChipId(hitsetkey);
+//					unsigned int ReGetStave = MvtxDefs::getStaveId(hitsetkey);
 
-					//	std::cout << "Validation: ChipID = " << NowChip << "      ReGetChip = " << ReGetChip << std::endl;
+
+					//std::cout << "Validation: " << hitsetkey  << "   ChipID = " << NowChip << "      ReGetChip = " << ReGetChip << "  Stave = " <<  Stave_hit->at(j) << "     ReGetStave = " << ReGetStave << "   LayerID = " << Layer_hit->at(j)    << std::endl;
 					int  GoodLayer = Layer_hit->at(j);
 
 
 
 
+					//geom->find_strip_center_localcoords(NowLadderZID,strip_y,strip_x,local);
 
-
+			
 
 					CylinderGeom_Mvtx* geom = dynamic_cast<CylinderGeom_Mvtx*>(m_Geoms->GetLayerGeom(GoodLayer));
+					
 
-
+					
 
 					auto surface = m_tGeometry->maps().getSiliconSurface(hitsetkey);
 
 
+
 					TVector3 local_coords = geom->get_local_coords_from_pixel(NowRow,NowCol);	
-					TVector3 world_coords = geom->get_world_from_local_coords(surface, m_tGeometry ,local_coords);
+					double world_coords[3];
+					geom->find_sensor_center(surface, m_tGeometry ,world_coords);
+					
+
+					TVector2 LocalUse;
+					LocalUse.SetX(local_coords.x());
+					LocalUse.SetY(local_coords.z());
+				
+					TVector3 PixelWorld = geom->get_world_from_local_coords(surface, m_tGeometry, LocalUse);
+			
+
+					
+
+					float PixelGlobalX = PixelWorld.x();
+					float PixelGlobalY = PixelWorld.y();
+					float PixelGlobalZ = PixelWorld.z();
 
 
-					float PixelGlobalX = world_coords.x()+ local_coords.x();
-					float PixelGlobalY = world_coords.y()+ local_coords.y();
-					float PixelGlobalZ = world_coords.z()+ local_coords.z();
+
+
 
 					GlobalX.push_back(PixelGlobalX);	
 					GlobalY.push_back(PixelGlobalY);
@@ -302,9 +326,9 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					LocalZ.push_back(local_coords.z());
 
 
-					ChipGlobalX.push_back(world_coords.x());
-					ChipGlobalY.push_back(world_coords.y());
-					ChipGlobalZ.push_back(world_coords.z());
+					ChipGlobalX.push_back(world_coords[0]);
+					ChipGlobalY.push_back(world_coords[1]);
+					ChipGlobalZ.push_back(world_coords[2]);
 
 				}
 
@@ -366,10 +390,15 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			int ladder[10000];
 		    int arm[10000];
 			int bco[10000];
-			long int  bco_full[10000];
+			Long64_t bco_full[10000];
 			int module[10000];
 			int chan_id[10000];
 			int layer[10000];
+			int barrel[10000];
+
+			Long64_t bco_event;
+			double TimeCal;  //Time in second
+
 
 			TFile * fin = new TFile(line.c_str());
 			fin->cd();
@@ -387,6 +416,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			tree->SetBranchAddress("fhitArray.bco",bco);
 			tree->SetBranchAddress("fhitArray.bco_full",bco_full);
 			tree->SetBranchAddress("fhitArray.layer",layer);
+			tree->SetBranchAddress("fhitArray.barrel",barrel);
+			tree->SetBranchAddress("bco",&bco_event);
 
 			//Local Information
 
@@ -394,6 +425,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			tree->SetBranchAddress("fhitArray.module",module);
 			tree->SetBranchAddress("fhitArray.chan_id",chan_id);
 
+			tree->SetBranchAddress("bco",&bco_event);
 
 
 
@@ -406,6 +438,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 			std::vector<int> HitID;	
 			std::vector<int> LayerID;
+			std::vector<int> barrelID;
 
 			std::vector<int> LadderPhiID;
 			std::vector<int> LadderZID;
@@ -416,11 +449,20 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			std::vector<float> GlobalX;
 			std::vector<float> GlobalY;
 			std::vector<float> GlobalZ;
+		
+
+			std::vector<float> GlobalX2;
+			std::vector<float> GlobalY2;
+			std::vector<float> GlobalZ2;
+
 
 
 			std::vector<float> LocalX;
 			std::vector<float> LocalY;
 			std::vector<float> LocalZ;
+			std::vector<long int> BCO;
+			std::vector<double> Time;
+
 
 			TTree * PixelWorldTree = new TTree("INTTHitTree","INTTHitTree"); 
 
@@ -428,7 +470,10 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("NumberHits",&NumberHits);
 			PixelWorldTree->Branch("HitID",&HitID);
 			PixelWorldTree->Branch("LayerID",&LayerID);
-			
+			PixelWorldTree->Branch("barrelID",&barrelID);
+			PixelWorldTree->Branch("BCO",&BCO);
+			PixelWorldTree->Branch("Time",&Time);
+		
 			PixelWorldTree->Branch("LadderPhiID",&LadderPhiID);
 			PixelWorldTree->Branch("LadderZID",&LadderZID);
 			PixelWorldTree->Branch("ChipID",&ChipID);	
@@ -442,10 +487,25 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("LocalY",&LocalY);
 			PixelWorldTree->Branch("LocalZ",&LocalZ);
 
+			PixelWorldTree->Branch("GlobalX2",&GlobalX2);
+			PixelWorldTree->Branch("GlobalY2",&GlobalY2);
+			PixelWorldTree->Branch("GlobalZ2",&GlobalZ2);
 
 
 			int NEvents = tree->GetEntries();
+	
 
+			//NEvents = 100;
+
+
+
+
+			Long64_t BCOIndex;
+			int InEventBCO;
+			int MinEvtBCO;
+			Long_t AbsBCO;
+			bool Set = false;
+			Long64_t BCOFullStart = -1;
 
 			for(int i = 0; i < NEvents; i++){
 
@@ -454,12 +514,33 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				EventID = evtSeq;
 				NumberHits = fNhits;
 
+				
+				if(EventID == 0 && Set == false){
+					BCOFullStart = bco_event;
+					Set = true;
+				}
+				if(!Set) continue;
+
+				BCOIndex = bco_event - BCOFullStart;
+				MinEvtBCO = 100000;
+				InEventBCO = 0;
+
+				for(int j = 0; j < fNhits; j++){
+					if(bco[j] < MinEvtBCO) MinEvtBCO = bco[j];
+				}
+
+
 				for(int j = 0; j < fNhits; j++){
 
 					//Below I tranform INTT decoded data to fit in offline tracking software from simulation
 
+					
+					InEventBCO = bco[j] - MinEvtBCO;
+					AbsBCO = InEventBCO + BCOIndex;
+					TimeCal = AbsBCO * 106.0/1000000000.0;  //In the unit of second (s) 106 ns -> 0.0000000106 s
+
 					int NowChip = chip_id[j];
-					int NowLayer = layer[j] + 3;
+					int NowLayer = layer[j] + barrel[j] * 2 + 3;
 					int NowChannel = chan_id[j];
 
 
@@ -467,7 +548,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					int NowLadderZID = arm[j] * 2 + (NowChip % 13 < 5);
 
 
-					uint8_t GenLayer = layer[j] + 3;
+					uint8_t GenLayer = layer[j] + barrel[j] * 2 + 3;
 					uint8_t GenLadderPhiID = ladder[j];
 					uint8_t GenLadderZID = arm[j] * 2 + (NowChip % 13 < 5);
 
@@ -503,7 +584,10 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					int NowCol = strip_x;
 					int NowRow = strip_y;
 
+				//	cout << "NowLayer = " << NowLayer << "    NowLadderZID = " << NowLadderZID << "    NowLadderPhiID = " << NowLadderPhiID << endl;
 					auto hitsetkey = InttDefs::genHitSetKey(GenLayer,GenLadderZID,GenLadderPhiID,0);
+				//	cout << "NowLayer = " << NowLayer << "    NowLadderZID = " << NowLadderZID << "    NowLadderPhiID = " << NowLadderPhiID << "    hitsetkey = " << hitsetkey << endl;
+					auto hitkey = InttDefs::genHitKey(strip_y,strip_x);
 
 					auto surface = m_tGeometry->maps().getSiliconSurface(hitsetkey);
 		
@@ -514,6 +598,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					//geom->find_strip_center(surface,m_tGeometry,NowLadderZID,NowLadderPhiID,NowCol,NowRow,hit_location);
 
 					geom->find_strip_center_localcoords(NowLadderZID,strip_y,strip_x,local);
+		
 			
 					TVector3 LocalCord;
 
@@ -539,6 +624,34 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					GlobalY.push_back(Global.Y());
 					GlobalZ.push_back(Global.Z());
 
+
+					//Additional Redo//
+					double hit_location[3] = {0.0,0.0,0.0};
+				
+
+					unsigned int Row2 = InttDefs::getRow(hitkey);
+					unsigned int Col2 = InttDefs::getCol(hitkey);
+					unsigned int LadderZId2 = InttDefs::getLadderZId(hitsetkey);
+					unsigned int LadderPhiId2 = InttDefs::getLadderPhiId(hitsetkey);
+
+
+					geom->find_strip_center(surface,m_tGeometry,LadderZId2,LadderPhiId2,Col2,Row2,hit_location);
+
+					//Manual Rotation clockwise by 90 degrees to the correct position for old software issue, will be fixed later by the INTT experts
+					
+					float RotX = hit_location[1];
+					float RotY = -hit_location[0];
+					float RotZ = hit_location[2];
+
+					GlobalX2.push_back(RotX);
+					GlobalY2.push_back(RotY);
+					GlobalZ2.push_back(RotZ);
+				
+				
+					BCO.push_back(AbsBCO);
+					Time.push_back(TimeCal);
+
+
 				}
 
 
@@ -546,6 +659,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 				HitID.clear();
 				LayerID.clear();
+				barrelID.clear();
 				LadderPhiID.clear();
 				LadderZID.clear();
 				ChipID.clear();
@@ -556,9 +670,15 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				GlobalY.clear();
 				GlobalZ.clear();
 
+				GlobalX2.clear();
+				GlobalY2.clear();
+				GlobalZ2.clear();
+
 				LocalX.clear();
 				LocalY.clear();
 				LocalZ.clear();
+				BCO.clear();
+				Time.clear();
 
 			}
 
