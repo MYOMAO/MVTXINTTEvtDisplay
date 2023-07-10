@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-source /opt/sphenix/core/bin/sphenix_setup.csh -n  ana.355
+source /opt/sphenix/core/bin/sphenix_setup.sh -n  ana.355
 
 rm -r install
 
