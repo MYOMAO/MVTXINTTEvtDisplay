@@ -180,6 +180,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 			int EventID;
 			int NumberHits;
+			Long_t BCO;
 			std::vector<int> HitID;	
 			std::vector<int> StaveID;
 			std::vector<int> LayerID;
@@ -202,6 +203,14 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			std::cout << "Pass 4" << std::endl;
 
 
+			std::vector<long int> * StrobeTimeOrb = 0;
+
+
+			TTree * HBInfoTree = (TTree *) fin->Get("HBInfoTree");
+		
+
+			HBInfoTree->SetBranchAddress("StrobeTimeOrb",&StrobeTimeOrb);
+
 
 
 
@@ -216,6 +225,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			TTree * PixelWorldTree = new TTree("MVTXPixelTree","MVTXPixelTree"); 
 
 			PixelWorldTree->Branch("EventID",&EventID);
+			PixelWorldTree->Branch("BCO",&BCO);
+		
 			PixelWorldTree->Branch("NumberHits",&NumberHits);
 			PixelWorldTree->Branch("HitID",&HitID);
 			PixelWorldTree->Branch("StaveID",&StaveID);
@@ -240,12 +251,13 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			for(int i = 0; i < NEvents; i++){
 
 				tree_fhrana->GetEntry(i);
+				HBInfoTree->GetEntry(i);
 
-
+			
 
 				EventID = event;
 				NumberHits = Nhits;
-
+				BCO = StrobeTimeOrb->at(0);
 
 				//std::cout << "event = " << event << "     Nhits = " << Nhits << endl;
 
@@ -395,6 +407,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			int chan_id[10000];
 			int layer[10000];
 			int barrel[10000];
+			
 
 			Long64_t bco_event;
 			double TimeCal;  //Time in second
@@ -462,6 +475,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			std::vector<float> LocalZ;
 			std::vector<long int> BCO;
 			std::vector<double> Time;
+			std::vector<long int> BCOFull;
 
 
 			TTree * PixelWorldTree = new TTree("INTTHitTree","INTTHitTree"); 
@@ -473,7 +487,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("barrelID",&barrelID);
 			PixelWorldTree->Branch("BCO",&BCO);
 			PixelWorldTree->Branch("Time",&Time);
-		
+			PixelWorldTree->Branch("BCOFull",&BCOFull);
+	
 			PixelWorldTree->Branch("LadderPhiID",&LadderPhiID);
 			PixelWorldTree->Branch("LadderZID",&LadderZID);
 			PixelWorldTree->Branch("ChipID",&ChipID);	
@@ -623,7 +638,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					GlobalX.push_back(Global.X());
 					GlobalY.push_back(Global.Y());
 					GlobalZ.push_back(Global.Z());
-
+		
 
 					//Additional Redo//
 					double hit_location[3] = {0.0,0.0,0.0};
@@ -650,6 +665,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				
 					BCO.push_back(AbsBCO);
 					Time.push_back(TimeCal);
+					BCOFull.push_back(bco_full[j]);
 
 
 				}
@@ -679,7 +695,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				LocalZ.clear();
 				BCO.clear();
 				Time.clear();
-
+				
+				BCOFull.clear();
 			}
 
 			fout->cd();
