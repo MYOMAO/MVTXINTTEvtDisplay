@@ -31,7 +31,16 @@ mkdir OutFile/MVTX
 
 mkdir OutFile/INTT
 
-root -b -l -q Fun4All_G4_sPHENIX.C'(10)'
+root -b -l -q Fun4All_G4_sPHENIX.C'(1)'
+
+Then we can merge the MVTX and INTT output files. For MVTX
+
+
+cd OutFile/MVTX/
+
+hadd MVTXAll.root *.root
+
+root -l MVTXAll.root
 
 
 
