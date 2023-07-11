@@ -1,4 +1,38 @@
+#Commands to Produce the Plots: #
 
-#Change EvtGen Building Command: #
+Get the codes by git clone https://github.com/MYOMAO/MVTXINTTEvtDisplay.git
 
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_CXX_STANDARD=17 -DCMAKE_INSTALL_PREFIX=/Your/Local/EventGen/Build/Folder -DHEPMC2_ROOT_DIR=/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/HepMC-2.06.11 -DEVTGEN_PHOTOS=OFF -DEVTGEN_TAUOLA=OFF -DEVTGEN_PYTHIA=ON -DHEPMC3_LIB=/sphenix/user/zshi/FastMLUConn/HFMLTriggerCodes/HepMC3Local/HepMC3/build/outputs/lib64/libHepMC3.so -DHEPMC3_ROOTIO_LIB=//sphenix/user/zshi/FastMLUConn/HFMLTriggerCodes/HepMC3Local/HepMC3/build/outputs/lib64/libHepMC3rootIO.so -DHEPMC3_ROOT_DIR=/sphenix/user/zshi/FastMLUConn/HFMLTriggerCodes/HepMC3Local/HepMC3/build/ -DHepMC3_DIR=/sphenix/user/zshi/FastMLUConn/HFMLTriggerCodes/HepMC3Local/HepMC3/build/share/HepMC3/cmake/ -DPHOTOSPP_ROOT_DIR=/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/PHOTOS-3.64_hepmc3-3.2.5_root-6.24.06 -DTAUOLAPP_ROOT_DIR=/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/TAUOLA-1.1.8_hepmc3-3.2.5_root-6.24.06 -DPYTHIA8_ROOT_DIR=/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/pythia8307_hepmc3-3.2.5_root-6.24.06 -DROOT_DIR=/cvmfs/sphenix.sdcc.bnl.gov/gcc-12.1.0/opt/sphenix/core/root-6.24.06/cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_SKIP_INSTALL_RPATH=ON -DCMAKE_SKIP_RPATH=ON -DCMAKE_VERBOSE_MAKEFILE=ON -DEVTGEN_BUILD_TESTS=OFF -DEVTGEN_BUILD_VALIDATIONS=OFF ../
+Build the code by source Build.sh for cshell and source BuildBshell.sh for bash shell
+
+Set the detector type to run at https://github.com/MYOMAO/MVTXINTTEvtDisplay/blob/master/macros/common/G4_Input.C#L48
+
+DetectorType = 0 is MVTX
+
+DetectorType = 1 is INTT
+
+Default is MVTX (DetectorType = 0): https://github.com/MYOMAO/MVTXINTTEvtDisplay/blob/master/macros/common/G4_Input.C#L48
+
+Define the Filelist to run. MVTX: FileList.txt and INTT: INTTFileList.txt
+
+Default MVTX Filelist: https://github.com/MYOMAO/MVTXINTTEvtDisplay/blob/master/macros/detectors/sPHENIX/FileList.txt
+
+Default INTT Filelist: https://github.com/MYOMAO/MVTXINTTEvtDisplay/blob/master/macros/detectors/sPHENIX/INTTFileList.txt
+
+Output file stored at OutFile/MVTX and OutFile/INTT 
+
+
+#To Run the Codes: #
+
+
+
+cd macros/detectors/sPHENIX
+
+mkdir OutFile/MVTX
+
+mkdir OutFile/INTT
+
+root -b -l -q Fun4All_G4_sPHENIX.C'(10)'
+
+
+
+
