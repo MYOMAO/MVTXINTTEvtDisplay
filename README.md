@@ -23,7 +23,7 @@ Output file stored at OutFile/MVTX and OutFile/INTT
 
 #To Run the Codes: #
 
-
+source Build.sh
 
 cd macros/detectors/sPHENIX
 
