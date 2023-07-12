@@ -73,6 +73,123 @@ PlotWorld::PlotWorld(std::string filename, int DetType)
 	cout << "Running - Detector Type - " << DetType << endl;
 
 	DetectorType = DetType;
+
+	//Define Cable Number Map 
+	//Layer 0
+	CableNum.insert({{0,0},20});	
+	CableNum.insert({{0,1},21});
+	CableNum.insert({{0,2},22});
+	CableNum.insert({{0,3},12});
+	CableNum.insert({{0,4},13});
+	CableNum.insert({{0,5},14});
+	CableNum.insert({{0,6},32});
+	CableNum.insert({{0,7},33});
+	CableNum.insert({{0,8},34});
+	CableNum.insert({{0,9},24});
+	CableNum.insert({{0,10},25});
+	CableNum.insert({{0,11},26});
+
+	//Layer 1
+	CableNum.insert({{1,0},8});	
+	CableNum.insert({{1,1},9});
+	CableNum.insert({{1,2},10});
+	CableNum.insert({{1,3},11});
+	CableNum.insert({{1,4},16});
+	CableNum.insert({{1,5},17});
+	CableNum.insert({{1,6},18});
+	CableNum.insert({{1,7},19});
+	CableNum.insert({{1,8},44});
+	CableNum.insert({{1,9},45});
+	CableNum.insert({{1,10},46});
+	CableNum.insert({{1,11},47});
+	CableNum.insert({{1,12},28});
+	CableNum.insert({{1,13},29});
+	CableNum.insert({{1,14},30});
+	CableNum.insert({{1,15},31});
+
+
+	//Layer 2
+	CableNum.insert({{2,0},35});	
+	CableNum.insert({{2,1},0});
+	CableNum.insert({{2,2},1});
+	CableNum.insert({{2,3},2});
+	CableNum.insert({{2,4},3});
+	CableNum.insert({{2,5},27});
+	CableNum.insert({{2,6},4});
+	CableNum.insert({{2,7},5});
+	CableNum.insert({{2,8},6});
+	CableNum.insert({{2,9},7});
+	CableNum.insert({{2,10},23});
+	CableNum.insert({{2,11},36});
+	CableNum.insert({{2,12},37});
+	CableNum.insert({{2,13},38});
+	CableNum.insert({{2,14},39});
+	CableNum.insert({{2,15},15});
+	CableNum.insert({{2,16},40});
+	CableNum.insert({{2,17},41});
+	CableNum.insert({{2,18},42});
+	CableNum.insert({{2,19},43});
+
+
+
+
+	//Create FELIX Mapping Here
+	//Layer 0
+	FELIXNum.insert({{0,0},0});	
+	FELIXNum.insert({{0,1},0});
+	FELIXNum.insert({{0,2},1});
+	FELIXNum.insert({{0,3},1});
+	FELIXNum.insert({{0,4},2});
+	FELIXNum.insert({{0,5},2});
+	FELIXNum.insert({{0,6},3});
+	FELIXNum.insert({{0,7},3});
+	FELIXNum.insert({{0,8},4});
+	FELIXNum.insert({{0,9},4});
+	FELIXNum.insert({{0,10},5});
+	FELIXNum.insert({{0,11},5});
+
+	//Layer 1
+	FELIXNum.insert({{1,0},5});	
+	FELIXNum.insert({{1,1},5});
+	FELIXNum.insert({{1,2},5});
+	FELIXNum.insert({{1,3},0});
+	FELIXNum.insert({{1,4},0});
+	FELIXNum.insert({{1,5},1});
+	FELIXNum.insert({{1,6},1});
+	FELIXNum.insert({{1,7},1});
+	FELIXNum.insert({{1,8},2});
+	FELIXNum.insert({{1,9},2});
+	FELIXNum.insert({{1,10},2});
+	FELIXNum.insert({{1,11},3});
+	FELIXNum.insert({{1,12},3});
+	FELIXNum.insert({{1,13},4});
+	FELIXNum.insert({{1,14},4});
+	FELIXNum.insert({{1,15},4});
+
+
+	//Layer 2
+	FELIXNum.insert({{2,0},4});	
+	FELIXNum.insert({{2,1},4});
+	FELIXNum.insert({{2,2},4});
+	FELIXNum.insert({{2,3},5});
+	FELIXNum.insert({{2,4},5});
+	FELIXNum.insert({{2,5},5});
+	FELIXNum.insert({{2,6},0});
+	FELIXNum.insert({{2,7},0});
+	FELIXNum.insert({{2,8},0});
+	FELIXNum.insert({{2,9},0});
+	FELIXNum.insert({{2,10},1});
+	FELIXNum.insert({{2,11},1});
+	FELIXNum.insert({{2,12},1});
+	FELIXNum.insert({{2,13},2});
+	FELIXNum.insert({{2,14},2});
+	FELIXNum.insert({{2,15},2});
+	FELIXNum.insert({{2,16},3});
+	FELIXNum.insert({{2,17},3});
+	FELIXNum.insert({{2,18},3});
+	FELIXNum.insert({{2,19},3});
+
+
 }
 
 int PlotWorld::Init(PHCompositeNode* topNode)
@@ -157,6 +274,9 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			vector<int> * ColumnID_hit = 0;
 			vector<int> * ChipID_hit = 0;
 
+
+			vector<int> * FEEID_hit = 0;
+
 			TFile * fin = new TFile(line.c_str());
 			fin->cd();
 
@@ -171,6 +291,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			tree_fhrana->SetBranchAddress("ChipID_hit",&ChipID_hit);
 			tree_fhrana->SetBranchAddress("Stave_hit",&Stave_hit);
 			tree_fhrana->SetBranchAddress("Layer_hit",&Layer_hit);
+			tree_fhrana->SetBranchAddress("FEEID_hit",&FEEID_hit);
 
 
 			int NEvents = tree_fhrana->GetEntries();
@@ -187,6 +308,9 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			std::vector<int> ChipID;
 			std::vector<int> RowID;
 			std::vector<int> ColID;
+			std::vector<int> FEEID;
+			std::vector<int> CableID;			
+			std::vector<int> FELIXID;
 
 			std::vector<float> GlobalX;
 			std::vector<float> GlobalY;
@@ -230,6 +354,12 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("NumberHits",&NumberHits);
 			PixelWorldTree->Branch("HitID",&HitID);
 			PixelWorldTree->Branch("StaveID",&StaveID);
+			PixelWorldTree->Branch("FEEID",&FEEID);
+	
+			PixelWorldTree->Branch("FELIXID",&FELIXID);
+			PixelWorldTree->Branch("CableID",&CableID);
+
+
 			PixelWorldTree->Branch("LayerID",&LayerID);
 			PixelWorldTree->Branch("ChipID",&ChipID);	
 			PixelWorldTree->Branch("RowID",&RowID);
@@ -272,6 +402,9 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 					RowID.push_back(RowID_hit->at(j));
 					ColID.push_back(ColumnID_hit->at(j));
+
+
+					FEEID.push_back(FEEID_hit->at(j));
 
 
 					uint8_t NowChip = ChipID_hit->at(j);
@@ -341,7 +474,25 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					ChipGlobalX.push_back(world_coords[0]);
 					ChipGlobalY.push_back(world_coords[1]);
 					ChipGlobalZ.push_back(world_coords[2]);
+	
 
+					std::array<int,2> StaveLocator = {Layer_hit->at(j),Stave_hit->at(j)};
+					int CableNow = -1;
+				 
+					if (CableNum.find(StaveLocator) != CableNum.end()) CableNow = CableNum.find(StaveLocator)->second;
+				
+
+
+					int FELIXNow = -1;
+					
+					if (FELIXNum.find(StaveLocator) != CableNum.end()) FELIXNow = FELIXNum.find(StaveLocator)->second;
+
+					//Checking if there is any error in locating the MVTX staves
+					if(CableNow == -1) cout << "Error Found: No Cable ID for the Input Stave!! Stave ID = " << Stave_hit->at(j) << "   LayerID == " << Layer_hit->at(j)   << endl; 
+					if(FELIXNow == -1) cout << "Error Found: No FELIX ID for the Input Stave!! Stave ID = " << Stave_hit->at(j) << "   LayerID == " << Layer_hit->at(j)   << endl; 
+
+					CableID.push_back(CableNow);
+					FELIXID.push_back(FELIXNow);
 				}
 
 				PixelWorldTree->Fill();
@@ -349,9 +500,14 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				HitID.clear();
 				StaveID.clear();
 				LayerID.clear();
+				CableID.clear();
+				FELIXID.clear();
+				
 				ChipID.clear();
 				RowID.clear();
 				ColID.clear();
+	
+				FEEID.clear();
 
 				GlobalX.clear();
 				GlobalY.clear();
@@ -738,3 +894,6 @@ int PlotWorld::load_nodes(PHCompositeNode* topNode)
 
 	return Fun4AllReturnCodes::EVENT_OK;
 }
+
+
+

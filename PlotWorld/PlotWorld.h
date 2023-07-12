@@ -60,6 +60,8 @@ class PlotWorld : public SubsysReco
 
 
   int load_nodes(PHCompositeNode* topNode);
+//  int GetFELIXID(int LayerNum, int StaveNum);
+//  int GetCableID(int LayerNum, int StaveNum);
 
  private:
 
@@ -71,8 +73,12 @@ class PlotWorld : public SubsysReco
   PHG4CylinderGeomContainer *m_Geoms;
   PHG4CylinderGeomContainer *m_Geoms2;
   PHG4TruthInfoContainer *m_truthInfo;
-  
+ 
+  std::multimap<std::array<int,2>, int> CableNum;
+  std::multimap<std::array<int,2>, int> FELIXNum;
 
+
+	
 };
 
 #endif  // __PlotWorld_H__
