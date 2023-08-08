@@ -195,7 +195,7 @@ PlotWorld::PlotWorld(std::string filename, int DetType)
 int PlotWorld::Init(PHCompositeNode* topNode)
 {
 
-	std::cout << "Initial Bro" << std::endl;
+	//std::cout << "Initial Bro" << std::endl;
 
 	if(DetectorType == 0) DetName = "MVTX";
 	if(DetectorType == 1) DetName = "INTT";
@@ -214,7 +214,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 		findNode::getClass<PHG4CylinderGeomContainer>(topNode, "CYLINDERGEOM_MVTX");
 	if (!m_Geoms)
 	{
-		//std::cout << PHWHERE << "ERROR: Can't find node CYLINDERCELLGEOM_MVTX" << std::endl;
+		////std::cout << PHWHERE << "ERROR: Can't find node CYLINDERCELLGEOM_MVTX" << std::endl;
 		return Fun4AllReturnCodes::ABORTRUN;
 	}
 
@@ -222,14 +222,14 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 		findNode::getClass<PHG4CylinderGeomContainer>(topNode, "CYLINDERGEOM_INTT");
 	if (!m_Geoms2)
 	{
-		//std::cout << PHWHERE << "ERROR: Can't find node CYLINDERCELLGEOM_INTT" << std::endl;
+		////std::cout << PHWHERE << "ERROR: Can't find node CYLINDERCELLGEOM_INTT" << std::endl;
 		return Fun4AllReturnCodes::ABORTRUN;
 	}
 
 	m_truthInfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
 	if (!m_truthInfo)
 	{
-		//std::cout << PHWHERE << "ERROR: Can't find node G4TruthInfo" << std::endl;
+		////std::cout << PHWHERE << "ERROR: Can't find node G4TruthInfo" << std::endl;
 		return Fun4AllReturnCodes::ABORTRUN;
 	}
 
@@ -241,7 +241,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 
 
-	std::cout << "Basically Copy Paste Codes Here" << "    Again Det Type is = " << DetectorType << std::endl;
+	//std::cout << "Basically Copy Paste Codes Here" << "    Again Det Type is = " << DetectorType << std::endl;
 
 	if(DetectorType == 0){
 
@@ -267,25 +267,47 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			int event;
 			int Nhits;
 
+//			Long_t BCO;
+//			int64_t Strobe_BCO;
+//			int Strobe_Index;
+
+
+			int HeaderFEEID;
+			int HeaderStaveID;
+			int HeaderLayerID;
+
+
+			ULong_t BCONew;
+			UShort_t BCNew;
+			ULong_t StrobeIDNew;
+			int StrobeNum;
+
 
 			vector<int> * Stave_hit = 0;
 			vector<int> * Layer_hit = 0;
 			vector<int> * RowID_hit = 0;
 			vector<int> * ColumnID_hit = 0;
 			vector<int> * ChipID_hit = 0;
-
-
 			vector<int> * FEEID_hit = 0;
 
 			TFile * fin = new TFile(line.c_str());
 			fin->cd();
 
-			TTree * tree_fhrana = (TTree *) fin->Get("tree_fhrana");
+			//TTree * tree_fhrana = (TTree *) fin->Get("tree_fhrana");
 
+			TTree * tree_fhrana = (TTree *) fin->Get("tree_fhrana");  //Use old for now
 
 
 			tree_fhrana->SetBranchAddress("event",&event);
 			tree_fhrana->SetBranchAddress("Nhits",&Nhits);
+			//tree_fhrana->SetBranchAddress("Strobe_BCO",&Strobe_BCO);
+			//tree_fhrana->SetBranchAddress("Strobe_Index",&Strobe_Index);
+
+			tree_fhrana->SetBranchAddress("HeaderFEEID",&HeaderFEEID);
+			tree_fhrana->SetBranchAddress("HeaderStaveID",&HeaderStaveID);
+			tree_fhrana->SetBranchAddress("HeaderLayerID",&HeaderLayerID);
+
+
 			tree_fhrana->SetBranchAddress("RowID_hit",&RowID_hit);
 			tree_fhrana->SetBranchAddress("ColumnID_hit",&ColumnID_hit);
 			tree_fhrana->SetBranchAddress("ChipID_hit",&ChipID_hit);
@@ -293,15 +315,23 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			tree_fhrana->SetBranchAddress("Layer_hit",&Layer_hit);
 			tree_fhrana->SetBranchAddress("FEEID_hit",&FEEID_hit);
 
+			tree_fhrana->SetBranchAddress("BCO",&BCONew);
+			tree_fhrana->SetBranchAddress("BC",&BCNew);
+			tree_fhrana->SetBranchAddress("StrobeID",&StrobeIDNew);
+			tree_fhrana->SetBranchAddress("StrobeNum",&StrobeNum);
 
 			int NEvents = tree_fhrana->GetEntries();
 
-			NEvents = 10000;
+			//NEvents = 10000;
 
 
 			int EventID;
 			int NumberHits;
-			Long_t BCO;
+
+			int64_t Strobe_BCO_Save;
+			int Strobe_Index_Save;
+			int64_t Strobe_ID_Save;
+
 			std::vector<int> HitID;	
 			std::vector<int> StaveID;
 			std::vector<int> LayerID;
@@ -324,21 +354,22 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			std::vector<float> ChipGlobalY;
 			std::vector<float> ChipGlobalZ;
 
-			std::cout << "Pass 4" << std::endl;
-
-
+			//std::cout << "Pass 4" << std::endl;
+/*
 			std::vector<long int> * StrobeTimeOrb = 0;
+			std::vector<long int> * StrobeBCOID = 0;
 
-
-			TTree * HBInfoTree = (TTree *) fin->Get("HBInfoTree");
-		
+			TTree * HBInfoTree = (TTree *) fin->Get("HBInfoTree");		
 
 			HBInfoTree->SetBranchAddress("StrobeTimeOrb",&StrobeTimeOrb);
+			HBInfoTree->SetBranchAddress("StrobeBCOID",&StrobeBCOID);
+*/
 
 
-
-
-
+			int HeaderCableIDSave;
+			int HeaderFELIXIDSave;
+			int HeaderFEEIDSave;
+			int Strobe_BC_Save;
 
 
 			TFile * fout = new TFile(Form("OutFile/MVTX/3DHitTree_%d.root",Index),"RECREATE");
@@ -349,8 +380,15 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			TTree * PixelWorldTree = new TTree("MVTXPixelTree","MVTXPixelTree"); 
 
 			PixelWorldTree->Branch("EventID",&EventID);
-			PixelWorldTree->Branch("BCO",&BCO);
-		
+			PixelWorldTree->Branch("Strobe_ID",&Strobe_ID_Save);
+			PixelWorldTree->Branch("Strobe_BCO",&Strobe_BCO_Save);
+			PixelWorldTree->Branch("Strobe_Index",&Strobe_Index_Save);
+			PixelWorldTree->Branch("Strobe_BC",&Strobe_BC_Save);
+
+			PixelWorldTree->Branch("HeaderFEEID",&HeaderFEEIDSave);
+			PixelWorldTree->Branch("HeaderCableID",&HeaderCableIDSave);
+			PixelWorldTree->Branch("HeaderFELIXID",&HeaderFELIXIDSave);
+
 			PixelWorldTree->Branch("NumberHits",&NumberHits);
 			PixelWorldTree->Branch("HitID",&HitID);
 			PixelWorldTree->Branch("StaveID",&StaveID);
@@ -376,23 +414,81 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("ChipGlobalX",&ChipGlobalX);
 			PixelWorldTree->Branch("ChipGlobalY",&ChipGlobalY);
 			PixelWorldTree->Branch("ChipGlobalZ",&ChipGlobalZ);
+			
+			//std::cout << "Pass 5" << std::endl;
 
+
+			NEvents = 10000000;
 
 			for(int i = 0; i < NEvents; i++){
 
+				//std::cout << "Pass 5 - Nevent 0" << std::endl;
+				
 				tree_fhrana->GetEntry(i);
-				HBInfoTree->GetEntry(i);
-
+				//std::cout << "Pass 5 - Nevent 1" << std::endl;
+				
+				//HBInfoTree->GetEntry(i);
 			
+		
+				if(i%100000 == 0) std::cout << "Now Working on Event = " << i << std::endl;
+
+				//std::cout << "Pass 5 - Nevent 2" << std::endl;
 
 				EventID = event;
 				NumberHits = Nhits;
-				BCO = StrobeTimeOrb->at(0);
+			//	Strobe_BCO_Save = Strobe_BCO;
+			//	Strobe_Index_Save = Strobe_Index;
+			//	Strobe_Index_Save = 0;
+				//std::cout << "Pass 5 - Nevent 3" << std::endl;
+			
+			//	BCO = StrobeTimeOrb->at(0);
 
-				//std::cout << "event = " << event << "     Nhits = " << Nhits << endl;
+				HeaderFEEIDSave = HeaderFEEID;
+			
+
+				std::array<int,2> StaveLocator2 = {HeaderLayerID,HeaderStaveID};
+				HeaderCableIDSave = -1;
+				if (CableNum.find(StaveLocator2) != CableNum.end()) HeaderCableIDSave = CableNum.find(StaveLocator2)->second;
+				HeaderFELIXIDSave = -1;	
+				if (FELIXNum.find(StaveLocator2) != CableNum.end()) HeaderFELIXIDSave = FELIXNum.find(StaveLocator2)->second;
+
+/*
+
+				if(StrobeTimeOrb->size() > 0){	
+					Strobe_BCO_Save = StrobeTimeOrb->at(0);
+					Strobe_ID_Save = StrobeBCOID->at(0);
+
+				}else{
+
+					std::cout << "LIFE SUCK: StrobeTimeOrb.size() = " << StrobeTimeOrb->size() << std::endl;
+				}
+*/
+				////std::cout << "event = " << event << "     Nhits = " << Nhits << endl;
+				
+				//std::cout << "Pass 5 - Nevent 4" << std::endl;
+		
+				//Use New Data Format by Strobe//
+
+				Strobe_ID_Save = StrobeIDNew;
+				Strobe_BCO_Save = BCONew;
+				Strobe_BC_Save = BCNew;
+				Strobe_Index_Save = StrobeNum;
+
+				int NActualHits = ColumnID_hit->size();
+			
+				//std::cout << "Pass 5 - Nevent 5" << std::endl;
+				
+				//if(Nhits != NActualHits) continue;
+
+				Nhits = NActualHits;  //Resolve for now, just for now
+
+				//std::cout << "Pass 5 - Nevent 6" << std::endl;
+				
+			//	cout << "Nhits = " << Nhits << endl;
 
 				for(int j = 0; j < Nhits; j++){
 
+					//std::cout << "j = " << j << "    Pass 5.11" << std::endl;
 
 
 					HitID.push_back(j);
@@ -420,10 +516,11 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 //					unsigned int ReGetStave = MvtxDefs::getStaveId(hitsetkey);
 
 
-					//std::cout << "Validation: " << hitsetkey  << "   ChipID = " << NowChip << "      ReGetChip = " << ReGetChip << "  Stave = " <<  Stave_hit->at(j) << "     ReGetStave = " << ReGetStave << "   LayerID = " << Layer_hit->at(j)    << std::endl;
+					////std::cout << "Validation: " << hitsetkey  << "   ChipID = " << NowChip << "      ReGetChip = " << ReGetChip << "  Stave = " <<  Stave_hit->at(j) << "     ReGetStave = " << ReGetStave << "   LayerID = " << Layer_hit->at(j)    << std::endl;
 					int  GoodLayer = Layer_hit->at(j);
 
 
+					//std::cout << "j = " << j << "    Pass 5.12" << std::endl;
 
 
 					//geom->find_strip_center_localcoords(NowLadderZID,strip_y,strip_x,local);
@@ -457,8 +554,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					float PixelGlobalY = PixelWorld.y();
 					float PixelGlobalZ = PixelWorld.z();
 
-
-
+					//std::cout << "j = " << j << "    Pass 5.13" << std::endl;
 
 
 					GlobalX.push_back(PixelGlobalX);	
@@ -482,6 +578,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					if (CableNum.find(StaveLocator) != CableNum.end()) CableNow = CableNum.find(StaveLocator)->second;
 				
 
+					//std::cout << "j = " << j << "    Pass 5.14" << std::endl;
 
 					int FELIXNow = -1;
 					
@@ -495,6 +592,15 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					FELIXID.push_back(FELIXNow);
 				}
 
+
+				//HeaderCableID = CableID.at(0);
+				//HeaderFELIXID = FELIXID.at(0);
+				//HeaderFEEID = FEEID.at(0);
+			 
+
+
+
+				
 				PixelWorldTree->Fill();
 
 				HitID.clear();
@@ -508,6 +614,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				ColID.clear();
 	
 				FEEID.clear();
+			
+				//std::cout << "i = " << i << "    Pass 5.17" << std::endl;
 
 				GlobalX.clear();
 				GlobalY.clear();
@@ -523,6 +631,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 			}
 
+			//std::cout << "Pass 6" << std::endl;
+			
 			fout->cd();
 
 			PixelWorldTree->Write();		
@@ -532,7 +642,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			Index = Index + 1;
 
 		}
-		std::cout << "DONE BRo" << std::endl;
+		//std::cout << "DONE BRo" << std::endl;
 
 
 	}
@@ -670,6 +780,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 
 
+			NEvents = 1000000;
 
 			Long64_t BCOIndex;
 			int InEventBCO;
@@ -868,7 +979,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 
 
-	std::cout << "Pass 10" << std::endl;
+	//std::cout << "Pass 10" << std::endl;
 
 	return Fun4AllReturnCodes::EVENT_OK;
 }
