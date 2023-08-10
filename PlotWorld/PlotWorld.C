@@ -582,7 +582,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 					int FELIXNow = -1;
 					
-					if (FELIXNum.find(StaveLocator) != FELIXNow.end()) FELIXNow = FELIXNum.find(StaveLocator)->second;
+					if (FELIXNum.find(StaveLocator) != FELIXNum.end()) FELIXNow = FELIXNum.find(StaveLocator)->second;
 
 					//Checking if there is any error in locating the MVTX staves
 					if(CableNow == -1) cout << "Error Found: No Cable ID for the Input Stave!! Stave ID = " << Stave_hit->at(j) << "   LayerID == " << Layer_hit->at(j)   << endl; 
