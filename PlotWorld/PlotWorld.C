@@ -282,6 +282,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			ULong_t StrobeIDNew;
 			int StrobeNum;
 
+			ULong_t L1TrigBCONew;
+			bool L1TrigNew;
 
 			vector<int> * Stave_hit = 0;
 			vector<int> * Layer_hit = 0;
@@ -319,6 +321,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			tree_fhrana->SetBranchAddress("BC",&BCNew);
 			tree_fhrana->SetBranchAddress("StrobeID",&StrobeIDNew);
 			tree_fhrana->SetBranchAddress("StrobeNum",&StrobeNum);
+			tree_fhrana->SetBranchAddress("L1TrigBCO",&L1TrigBCONew);
+			tree_fhrana->SetBranchAddress("L1Trig",&L1TrigNew);
 
 			int NEvents = tree_fhrana->GetEntries();
 
@@ -371,6 +375,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			int HeaderFEEIDSave;
 			int Strobe_BC_Save;
 
+			int64_t L1TrigBCOSave;
+			bool L1TrigSave;
 
 			TFile * fout = new TFile(Form("OutFile/MVTX/3DHitTree_%d.root",Index),"RECREATE");
 			fout->cd();
@@ -384,6 +390,10 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("Strobe_BCO",&Strobe_BCO_Save);
 			PixelWorldTree->Branch("Strobe_Index",&Strobe_Index_Save);
 			PixelWorldTree->Branch("Strobe_BC",&Strobe_BC_Save);
+
+			PixelWorldTree->Branch("L1TrigBCOSave",&L1TrigBCOSave);
+			PixelWorldTree->Branch("L1TrigSave",&L1TrigSave);
+
 
 			PixelWorldTree->Branch("HeaderFEEID",&HeaderFEEIDSave);
 			PixelWorldTree->Branch("HeaderCableID",&HeaderCableIDSave);
@@ -473,6 +483,10 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				Strobe_BCO_Save = BCONew;
 				Strobe_BC_Save = BCNew;
 				Strobe_Index_Save = StrobeNum;
+
+				L1TrigSave = L1TrigNew;
+				L1TrigBCOSave = L1TrigBCONew;
+
 
 				int NActualHits = ColumnID_hit->size();
 			
