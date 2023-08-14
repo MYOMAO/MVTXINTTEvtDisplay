@@ -60,7 +60,7 @@
 #include <iostream>
 #include <trackbase/ActsSurfaceMaps.h>
 
-
+//bool DoClean;
 
 
 
@@ -74,6 +74,7 @@ PlotWorld::PlotWorld(std::string filename, int DetType)
 
 	DetectorType = DetType;
 
+//	DoClean = true;
 	//Define Cable Number Map 
 	//Layer 0
 	CableNum.insert({{0,0},20});	
@@ -266,10 +267,11 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 			int event;
 			int Nhits;
+			int NStrobehits;
 
-//			Long_t BCO;
-//			int64_t Strobe_BCO;
-//			int Strobe_Index;
+			//			Long_t BCO;
+			//			int64_t Strobe_BCO;
+			//			int Strobe_Index;
 
 
 			int HeaderFEEID;
@@ -304,6 +306,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			tree_fhrana->SetBranchAddress("Nhits",&Nhits);
 			//tree_fhrana->SetBranchAddress("Strobe_BCO",&Strobe_BCO);
 			//tree_fhrana->SetBranchAddress("Strobe_Index",&Strobe_Index);
+			tree_fhrana->SetBranchAddress("NStrobehits",&NStrobehits);
 
 			tree_fhrana->SetBranchAddress("HeaderFEEID",&HeaderFEEID);
 			tree_fhrana->SetBranchAddress("HeaderStaveID",&HeaderStaveID);
@@ -357,17 +360,18 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			std::vector<float> ChipGlobalX;
 			std::vector<float> ChipGlobalY;
 			std::vector<float> ChipGlobalZ;
+			std::vector<int> ClusSize;	
 
 			//std::cout << "Pass 4" << std::endl;
-/*
-			std::vector<long int> * StrobeTimeOrb = 0;
-			std::vector<long int> * StrobeBCOID = 0;
+			/*
+			   std::vector<long int> * StrobeTimeOrb = 0;
+			   std::vector<long int> * StrobeBCOID = 0;
 
-			TTree * HBInfoTree = (TTree *) fin->Get("HBInfoTree");		
+			   TTree * HBInfoTree = (TTree *) fin->Get("HBInfoTree");		
 
-			HBInfoTree->SetBranchAddress("StrobeTimeOrb",&StrobeTimeOrb);
-			HBInfoTree->SetBranchAddress("StrobeBCOID",&StrobeBCOID);
-*/
+			   HBInfoTree->SetBranchAddress("StrobeTimeOrb",&StrobeTimeOrb);
+			   HBInfoTree->SetBranchAddress("StrobeBCOID",&StrobeBCOID);
+			   */
 
 
 			int HeaderCableIDSave;
@@ -377,6 +381,9 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 			int64_t L1TrigBCOSave;
 			bool L1TrigSave;
+
+			int NStrobehitsSave;
+			 
 
 			TFile * fout = new TFile(Form("OutFile/MVTX/3DHitTree_%d.root",Index),"RECREATE");
 			fout->cd();
@@ -400,10 +407,12 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("HeaderFELIXID",&HeaderFELIXIDSave);
 
 			PixelWorldTree->Branch("NumberHits",&NumberHits);
+			PixelWorldTree->Branch("NStrobeHits",&NStrobehitsSave);
+		
 			PixelWorldTree->Branch("HitID",&HitID);
 			PixelWorldTree->Branch("StaveID",&StaveID);
 			PixelWorldTree->Branch("FEEID",&FEEID);
-	
+
 			PixelWorldTree->Branch("FELIXID",&FELIXID);
 			PixelWorldTree->Branch("CableID",&CableID);
 
@@ -412,6 +421,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("ChipID",&ChipID);	
 			PixelWorldTree->Branch("RowID",&RowID);
 			PixelWorldTree->Branch("ColID",&ColID);
+			PixelWorldTree->Branch("ClusSize",&ClusSize);
+			
 			PixelWorldTree->Branch("GlobalX",&GlobalX);
 			PixelWorldTree->Branch("GlobalY",&GlobalY);
 			PixelWorldTree->Branch("GlobalZ",&GlobalZ);
@@ -424,37 +435,39 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("ChipGlobalX",&ChipGlobalX);
 			PixelWorldTree->Branch("ChipGlobalY",&ChipGlobalY);
 			PixelWorldTree->Branch("ChipGlobalZ",&ChipGlobalZ);
-			
+
 			//std::cout << "Pass 5" << std::endl;
 
 
 			//NEvents = 10000000;
 
+//			NEvents = 30000000;
 			for(int i = 0; i < NEvents; i++){
 
 				//std::cout << "Pass 5 - Nevent 0" << std::endl;
-				
+
 				tree_fhrana->GetEntry(i);
 				//std::cout << "Pass 5 - Nevent 1" << std::endl;
-				
+
 				//HBInfoTree->GetEntry(i);
-			
-		
+
+
 				if(i%100000 == 0) std::cout << "Now Working on Event = " << i << std::endl;
 
 				//std::cout << "Pass 5 - Nevent 2" << std::endl;
 
 				EventID = event;
 				NumberHits = Nhits;
-			//	Strobe_BCO_Save = Strobe_BCO;
-			//	Strobe_Index_Save = Strobe_Index;
-			//	Strobe_Index_Save = 0;
+				NStrobehitsSave = NStrobehits;
+				//	Strobe_BCO_Save = Strobe_BCO;
+				//	Strobe_Index_Save = Strobe_Index;
+				//	Strobe_Index_Save = 0;
 				//std::cout << "Pass 5 - Nevent 3" << std::endl;
-			
-			//	BCO = StrobeTimeOrb->at(0);
+
+				//	BCO = StrobeTimeOrb->at(0);
 
 				HeaderFEEIDSave = HeaderFEEID;
-			
+
 
 				std::array<int,2> StaveLocator2 = {HeaderLayerID,HeaderStaveID};
 				HeaderCableIDSave = -1;
@@ -462,21 +475,21 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				HeaderFELIXIDSave = -1;	
 				if (FELIXNum.find(StaveLocator2) != CableNum.end()) HeaderFELIXIDSave = FELIXNum.find(StaveLocator2)->second;
 
-/*
+				/*
 
-				if(StrobeTimeOrb->size() > 0){	
-					Strobe_BCO_Save = StrobeTimeOrb->at(0);
-					Strobe_ID_Save = StrobeBCOID->at(0);
+				   if(StrobeTimeOrb->size() > 0){	
+				   Strobe_BCO_Save = StrobeTimeOrb->at(0);
+				   Strobe_ID_Save = StrobeBCOID->at(0);
 
-				}else{
+				   }else{
 
-					std::cout << "LIFE SUCK: StrobeTimeOrb.size() = " << StrobeTimeOrb->size() << std::endl;
-				}
-*/
+				   std::cout << "LIFE SUCK: StrobeTimeOrb.size() = " << StrobeTimeOrb->size() << std::endl;
+				   }
+				   */
 				////std::cout << "event = " << event << "     Nhits = " << Nhits << endl;
-				
+
 				//std::cout << "Pass 5 - Nevent 4" << std::endl;
-		
+
 				//Use New Data Format by Strobe//
 
 				Strobe_ID_Save = StrobeIDNew;
@@ -489,23 +502,65 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 
 				int NActualHits = ColumnID_hit->size();
-			
+
 				//std::cout << "Pass 5 - Nevent 5" << std::endl;
-				
+
 				//if(Nhits != NActualHits) continue;
 
 				Nhits = NActualHits;  //Resolve for now, just for now
 
 				//std::cout << "Pass 5 - Nevent 6" << std::endl;
-				
-			//	cout << "Nhits = " << Nhits << endl;
+
+				//	cout << "Nhits = " << Nhits << endl;
 
 				for(int j = 0; j < Nhits; j++){
 
 					//std::cout << "j = " << j << "    Pass 5.11" << std::endl;
 
+					//Hao-Ren Algorithm: Do Isolated Pixel Rejection//
+					
+/*			
+					bool isIsolatedPixel = true;
+					// loop over hits to check if the pixel is isolated
+					for (int k = 0; k < Nhits; k++)
+					{
+						if (j == k)
+							continue;
+
+						// check if the pixel is isolated
+						if (abs(ColumnID_hit->at(j) - ColumnID_hit->at(k)) <= 1 && abs(RowID_hit->at(j) - RowID_hit->at(k)) <= 1)
+						{
+							isIsolatedPixel = false;
+							break;
+						}
+					}
+
+					if (isIsolatedPixel)
+						continue;
+*/
+
+					
+
+					int NClus = 1;
+
+					for (int k = 0; k < Nhits; k++)
+					{
+						if (j == k)
+							continue;
+
+						// check if the pixel is isolated
+						if (abs(ColumnID_hit->at(j) - ColumnID_hit->at(k)) <= 1 && abs(RowID_hit->at(j) - RowID_hit->at(k)) <= 1)
+						{
+							//isIsolatedPixel = false;
+							NClus = NClus + 1;
+							//break;
+						}
+					}
+					
+
 
 					HitID.push_back(j);
+					ClusSize.push_back(NClus);
 					StaveID.push_back(Stave_hit->at(j));
 					LayerID.push_back(Layer_hit->at(j));
 					ChipID.push_back(ChipID_hit->at(j));
@@ -526,8 +581,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					auto hitsetkey = MvtxDefs::genHitSetKey(NowLayer,NowStave,NowChip,0);
 
 
-//					unsigned int ReGetChip = MvtxDefs::getChipId(hitsetkey);
-//					unsigned int ReGetStave = MvtxDefs::getStaveId(hitsetkey);
+					//					unsigned int ReGetChip = MvtxDefs::getChipId(hitsetkey);
+					//					unsigned int ReGetStave = MvtxDefs::getStaveId(hitsetkey);
 
 
 					////std::cout << "Validation: " << hitsetkey  << "   ChipID = " << NowChip << "      ReGetChip = " << ReGetChip << "  Stave = " <<  Stave_hit->at(j) << "     ReGetStave = " << ReGetStave << "   LayerID = " << Layer_hit->at(j)    << std::endl;
@@ -539,12 +594,12 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 					//geom->find_strip_center_localcoords(NowLadderZID,strip_y,strip_x,local);
 
-			
+
 
 					CylinderGeom_Mvtx* geom = dynamic_cast<CylinderGeom_Mvtx*>(m_Geoms->GetLayerGeom(GoodLayer));
-					
 
-					
+
+
 
 					auto surface = m_tGeometry->maps().getSiliconSurface(hitsetkey);
 
@@ -553,16 +608,16 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					TVector3 local_coords = geom->get_local_coords_from_pixel(NowRow,NowCol);	
 					double world_coords[3];
 					geom->find_sensor_center(surface, m_tGeometry ,world_coords);
-					
+
 
 					TVector2 LocalUse;
 					LocalUse.SetX(local_coords.x());
 					LocalUse.SetY(local_coords.z());
-				
-					TVector3 PixelWorld = geom->get_world_from_local_coords(surface, m_tGeometry, LocalUse);
-			
 
-					
+					TVector3 PixelWorld = geom->get_world_from_local_coords(surface, m_tGeometry, LocalUse);
+
+
+
 
 					float PixelGlobalX = PixelWorld.x();
 					float PixelGlobalY = PixelWorld.y();
@@ -584,18 +639,18 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					ChipGlobalX.push_back(world_coords[0]);
 					ChipGlobalY.push_back(world_coords[1]);
 					ChipGlobalZ.push_back(world_coords[2]);
-	
+
 
 					std::array<int,2> StaveLocator = {Layer_hit->at(j),Stave_hit->at(j)};
 					int CableNow = -1;
-				 
+
 					if (CableNum.find(StaveLocator) != CableNum.end()) CableNow = CableNum.find(StaveLocator)->second;
-				
+
 
 					//std::cout << "j = " << j << "    Pass 5.14" << std::endl;
 
 					int FELIXNow = -1;
-					
+
 					if (FELIXNum.find(StaveLocator) != FELIXNum.end()) FELIXNow = FELIXNum.find(StaveLocator)->second;
 
 					//Checking if there is any error in locating the MVTX staves
@@ -610,11 +665,11 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				//HeaderCableID = CableID.at(0);
 				//HeaderFELIXID = FELIXID.at(0);
 				//HeaderFEEID = FEEID.at(0);
-			 
 
 
 
-				
+
+
 				PixelWorldTree->Fill();
 
 				HitID.clear();
@@ -622,13 +677,15 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				LayerID.clear();
 				CableID.clear();
 				FELIXID.clear();
-				
+
+				ClusSize.clear();
+
 				ChipID.clear();
 				RowID.clear();
 				ColID.clear();
-	
+
 				FEEID.clear();
-			
+
 				//std::cout << "i = " << i << "    Pass 5.17" << std::endl;
 
 				GlobalX.clear();
@@ -646,7 +703,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			}
 
 			//std::cout << "Pass 6" << std::endl;
-			
+
 			fout->cd();
 
 			PixelWorldTree->Write();		
@@ -672,7 +729,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 		while(getline(FileList, line))
 		{
-	
+
 			cout << "Now Processing INTT File Index: " << Index <<   "     Name: " << line.c_str() << endl;
 
 			int evtSeq;
@@ -680,14 +737,14 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 			int chip_id[10000];
 			int ladder[10000];
-		    int arm[10000];
+			int arm[10000];
 			int bco[10000];
 			Long64_t bco_full[10000];
 			int module[10000];
 			int chan_id[10000];
 			int layer[10000];
 			int barrel[10000];
-			
+
 
 			Long64_t bco_event;
 			double TimeCal;  //Time in second
@@ -703,7 +760,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			tree->SetBranchAddress("fNhits",&fNhits);
 			tree->SetBranchAddress("fhitArray.chip_id",chip_id);
 			tree->SetBranchAddress("fhitArray.chan_id",chan_id);
-			
+
 			tree->SetBranchAddress("fhitArray.ladder",ladder);
 			tree->SetBranchAddress("fhitArray.arm",arm);
 			tree->SetBranchAddress("fhitArray.bco",bco);
@@ -742,7 +799,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			std::vector<float> GlobalX;
 			std::vector<float> GlobalY;
 			std::vector<float> GlobalZ;
-		
+
 
 			std::vector<float> GlobalX2;
 			std::vector<float> GlobalY2;
@@ -768,7 +825,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 			PixelWorldTree->Branch("BCO",&BCO);
 			PixelWorldTree->Branch("Time",&Time);
 			PixelWorldTree->Branch("BCOFull",&BCOFull);
-	
+
 			PixelWorldTree->Branch("LadderPhiID",&LadderPhiID);
 			PixelWorldTree->Branch("LadderZID",&LadderZID);
 			PixelWorldTree->Branch("ChipID",&ChipID);	
@@ -788,7 +845,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 
 			int NEvents = tree->GetEntries();
-	
+
 
 			//NEvents = 100;
 
@@ -810,7 +867,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				EventID = evtSeq;
 				NumberHits = fNhits;
 
-				
+
 				if(EventID == 0 && Set == false){
 					BCOFullStart = bco_event;
 					Set = true;
@@ -830,7 +887,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
 					//Below I tranform INTT decoded data to fit in offline tracking software from simulation
 
-					
+
 					InEventBCO = bco[j] - MinEvtBCO;
 					AbsBCO = InEventBCO + BCOIndex;
 					TimeCal = AbsBCO * 106.0/1000000000.0;  //In the unit of second (s) 106 ns -> 0.0000000106 s
@@ -880,28 +937,28 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					int NowCol = strip_x;
 					int NowRow = strip_y;
 
-				//	cout << "NowLayer = " << NowLayer << "    NowLadderZID = " << NowLadderZID << "    NowLadderPhiID = " << NowLadderPhiID << endl;
+					//	cout << "NowLayer = " << NowLayer << "    NowLadderZID = " << NowLadderZID << "    NowLadderPhiID = " << NowLadderPhiID << endl;
 					auto hitsetkey = InttDefs::genHitSetKey(GenLayer,GenLadderZID,GenLadderPhiID,0);
-				//	cout << "NowLayer = " << NowLayer << "    NowLadderZID = " << NowLadderZID << "    NowLadderPhiID = " << NowLadderPhiID << "    hitsetkey = " << hitsetkey << endl;
+					//	cout << "NowLayer = " << NowLayer << "    NowLadderZID = " << NowLadderZID << "    NowLadderPhiID = " << NowLadderPhiID << "    hitsetkey = " << hitsetkey << endl;
 					auto hitkey = InttDefs::genHitKey(strip_y,strip_x);
 
 					auto surface = m_tGeometry->maps().getSiliconSurface(hitsetkey);
-		
+
 
 					double local[3] = {0.0,0.0,0.0};
-					
+
 					CylinderGeomIntt* geom = dynamic_cast<CylinderGeomIntt*>(m_Geoms2->GetLayerGeom(NowLayer));
 					//geom->find_strip_center(surface,m_tGeometry,NowLadderZID,NowLadderPhiID,NowCol,NowRow,hit_location);
 
 					geom->find_strip_center_localcoords(NowLadderZID,strip_y,strip_x,local);
-		
-			
+
+
 					TVector3 LocalCord;
 
 					LocalCord.SetXYZ(local[0],local[1],local[2]);
-	
+
 					TVector3 Global = geom->get_world_from_local_coords(surface, m_tGeometry, LocalCord);
-				
+
 
 					HitID.push_back(j);
 					LayerID.push_back(NowLayer);
@@ -919,11 +976,11 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					GlobalX.push_back(Global.X());
 					GlobalY.push_back(Global.Y());
 					GlobalZ.push_back(Global.Z());
-		
+
 
 					//Additional Redo//
 					double hit_location[3] = {0.0,0.0,0.0};
-				
+
 
 					unsigned int Row2 = InttDefs::getRow(hitkey);
 					unsigned int Col2 = InttDefs::getCol(hitkey);
@@ -934,7 +991,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					geom->find_strip_center(surface,m_tGeometry,LadderZId2,LadderPhiId2,Col2,Row2,hit_location);
 
 					//Manual Rotation clockwise by 90 degrees to the correct position for old software issue, will be fixed later by the INTT experts
-					
+
 					float RotX = hit_location[1];
 					float RotY = -hit_location[0];
 					float RotZ = hit_location[2];
@@ -942,8 +999,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 					GlobalX2.push_back(RotX);
 					GlobalY2.push_back(RotY);
 					GlobalZ2.push_back(RotZ);
-				
-				
+
+
 					BCO.push_back(AbsBCO);
 					Time.push_back(TimeCal);
 					BCOFull.push_back(bco_full[j]);
@@ -976,7 +1033,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 				LocalZ.clear();
 				BCO.clear();
 				Time.clear();
-				
+
 				BCOFull.clear();
 			}
 
