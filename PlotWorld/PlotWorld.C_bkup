@@ -16,15 +16,12 @@
 
 #include <trackbase/TrkrHitSetContainerv1.h>
 #include <trackbase/TrkrHitTruthAssocv1.h>
-#include <trackbase/TrkrClusterHitAssoc.h>
-#include <trackbase/TrkrClusterHitAssocv3.h>
+//#include <trackbase/TrkrClusterHitAssoc.h>
 #include <trackbase/TrkrHitv2.h>
 #include <trackbase/TrkrHitSet.h>
-#include <trackbase/TrkrClusterContainerv4.h>
-#include <trackbase/TrkrClusterv4.h>
+//#include <trackbase/TrkrCluster.h>
 
 #include <mvtx/CylinderGeom_Mvtx.h>
-#include <mvtx/MvtxClusterizer.h>
 #include <trackbase/MvtxDefs.h>
 
 #include <intt/CylinderGeomIntt.h>
@@ -230,61 +227,6 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
     cout << "HFMLTriggerInterface::InitRun - WARNING - missing m_tGeometry" << endl;
   }
 
-
-  //Create a cluster container on the node tree
-  auto trkrclusters = findNode::getClass<TrkrClusterContainer>(topNode, "TRKR_CLUSTER");
-  if (!trkrclusters)
-  {
-    PHNodeIterator dstiter(topNode);
-    PHCompositeNode *DetNode =
-      dynamic_cast<PHCompositeNode *>(dstiter.findFirst("PHCompositeNode", "TRKR"));
-    if (!DetNode)
-      {
-	DetNode = new PHCompositeNode("TRKR");
-	topNode->addNode(DetNode);
-      }
-
-    trkrclusters = new TrkrClusterContainerv4;
-    PHIODataNode<PHObject> *TrkrClusterContainerNode =
-      new PHIODataNode<PHObject>(trkrclusters, "TRKR_CLUSTER", "PHObject");
-    DetNode->addNode(TrkrClusterContainerNode);
-  }
-
-  //Now create a hit set container on the node tree as well for the clusteriser to pick up
-  TrkrHitSetContainerv1 *trkrHitSetContainer = findNode::getClass<TrkrHitSetContainerv1>(topNode, "TRKR_HITSET");
-  if (!trkrHitSetContainer)
-  {
-    PHNodeIterator dstiter(topNode);
-    PHCompositeNode *DetNode = dynamic_cast<PHCompositeNode *>(dstiter.findFirst("PHCompositeNode", "TRKR"));
-    if (!DetNode)
-      {
-	DetNode = new PHCompositeNode("TRKR");
-	topNode->addNode(DetNode);
-      }
-
-    trkrHitSetContainer = new TrkrHitSetContainerv1;
-    PHIODataNode<PHObject> *TrkrHitSetContainerNode = new PHIODataNode<PHObject>(trkrHitSetContainer, "TRKR_HITSET", "PHObject");
-    DetNode->addNode(TrkrHitSetContainerNode);
-  }
-
-  //And finally create a hit/cluster association node (or else we'll crash)
-  auto clusterhitassoc = findNode::getClass<TrkrClusterHitAssoc>(topNode,"TRKR_CLUSTERHITASSOC");
-  if(!clusterhitassoc)
-    {
-      PHNodeIterator dstiter(topNode);
-      PHCompositeNode *DetNode =
-        dynamic_cast<PHCompositeNode *>(dstiter.findFirst("PHCompositeNode", "TRKR"));
-      if (!DetNode)
-	{
-	  DetNode = new PHCompositeNode("TRKR");
-	  topNode->addNode(DetNode);
-	}
-
-      clusterhitassoc = new TrkrClusterHitAssocv3;
-      PHIODataNode<PHObject> *newNode = new PHIODataNode<PHObject>(clusterhitassoc, "TRKR_CLUSTERHITASSOC", "PHObject");
-      DetNode->addNode(newNode);
-    }
-
   // std::cout << "Basically Copy Paste Codes Here" << "    Again Det Type is = " << DetectorType << std::endl;
 
   if (DetectorType == 0)
@@ -475,11 +417,6 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
       // NEvents = 10000000;
       for (int i = 0; i < NEvents; i++)
       {
-        //As we're in InitRun and not process event, we should reset the 3 containers I made
-        trkrclusters->Reset();
-        trkrHitSetContainer->Reset();
-        clusterhitassoc->Reset();
-
         tree_fhrana->GetEntry(i);
 
         if (i % 100000 == 0) std::cout << "Now Working on Event = " << i << std::endl;
@@ -527,7 +464,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
 
         Nhits = NActualHits;  // Resolve for now, just for now
 
-        //TrkrHitSetContainerv1 *trkrHitSetContainer = new TrkrHitSetContainerv1();
+        TrkrHitSetContainerv1 *trkrHitSetContainer = new TrkrHitSetContainerv1();
 
         for (int j = 0; j < Nhits; j++)
         {
@@ -592,7 +529,7 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
           if (m_run_clusterizer)
           {
             // generate the key for this hit
-            TrkrDefs::hitkey hitkey = MvtxDefs::genHitKey(NowCol, NowRow);
+            TrkrDefs::hitkey hitkey = MvtxDefs::genHitKey(NowRow, NowCol);
             // See if this hit already exists
 	    TrkrHit* hit = nullptr;
             hit = hitsetit->second->getHit(hitkey);
@@ -662,41 +599,83 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
         //Now make clusters
 	if (m_run_clusterizer)
         {
-          MvtxClusterizer myClusterizer;
-	  myClusterizer.process_event(topNode);
-        }
-  
-        TrkrHitSetContainer::ConstRange hitsetrange = trkrHitSetContainer->getHitSets(TrkrDefs::TrkrId::mvtxId);
+	  TrkrHitSetContainer::ConstRange hitsetrange = trkrHitSetContainer->getHitSets(TrkrDefs::TrkrId::mvtxId);
 
-        for (TrkrHitSetContainer::ConstIterator hitsetitr = hitsetrange.first; hitsetitr != hitsetrange.second; ++hitsetitr)
-        {
-          TrkrHitSet *hitset = hitsetitr->second; // hitset : map <TrkrDefs::hitkey, TrkrHit>
-          auto hitsetkey = hitset->getHitSetKey();
+          for (TrkrHitSetContainer::ConstIterator hitsetitr = hitsetrange.first; hitsetitr != hitsetrange.second; ++hitsetitr)
+          { 
+            TrkrHitSet *hitset = hitsetitr->second; // hitset : map <TrkrDefs::hitkey, TrkrHit>
+            TrkrHitSet::ConstRange hitrangei = hitset->getHits();
+	    auto hitsetkey = hitset->getHitSetKey();
+	    auto ckey = TrkrDefs::genClusKey(hitsetkey, 0); // there is only one cluster made per cluskey
+	    
+	    // determine the size of the cluster in phi and z
+            std::set<int> phibins;
+            std::set<int> zbins;
+	    
+	    // determine the cluster position...
+	    double locxsum = 0.;
+	    double loczsum = 0.;
+	    
+	    double locclusx = NAN;
+	    double locclusz = NAN;
+	    
+	    // we need the geometry object for this layer to get the global positions
+	    int layer = TrkrDefs::getLayer(ckey);
+	    auto layergeom = dynamic_cast<CylinderGeom_Mvtx *>(m_Geoms->GetLayerGeom(layer));
+	    if (!layergeom)
+	      exit(1); 
 
-          int layer = TrkrDefs::getLayer(hitsetkey);
-          auto surface = m_tGeometry->maps().getSiliconSurface(hitsetkey);
-	  auto layergeom = dynamic_cast<CylinderGeom_Mvtx *>(m_Geoms->GetLayerGeom(layer));
-          TVector2 LocalUse;
+            double npixels {0.};
+            for ( auto ihit = hitrangei.first; ihit != hitrangei.second; ++ihit)
+            {
+              int col =  MvtxDefs::getCol( ihit->first);
+              int row = MvtxDefs::getRow(  ihit->first);
+              // size
+              npixels += 1.;
+              zbins.insert(col);
+              phibins.insert(row);
 
-          TrkrClusterContainer::ConstRange clusterrange = trkrclusters->getClusters(hitsetkey);
+              // get local coordinates, in stave reference frame, for hit
+              auto local_coords = layergeom->get_local_coords_from_pixel(row,col);
 
-          for (TrkrClusterContainer::ConstIterator clusteritr = clusterrange.first; clusteritr != clusterrange.second; ++clusteritr)
-          {
-            TrkrCluster *cluster = clusteritr->second;
+              /*
+                 manually offset position along y (thickness of the sensor),
+                 to account for effective hit position in the sensor, resulting from diffusion.
+                 Effective position corresponds to 1um above the middle of the sensor
+                 */
+              local_coords.SetY( 1e-4 );
 
-            LocalUse.SetX(cluster->getLocalX());
-            LocalUse.SetY(cluster->getLocalY());
+              // update cluster position
+              locxsum += local_coords.X();
+              loczsum += local_coords.Z();
+              // add the association between this cluster key and this hitkey to the table
+            }  //mapiter
+	  
+	    // This is the local position
+	    locclusx = locxsum / npixels;
+	    locclusz = loczsum / npixels;
+	    
+	    const double pitch   = layergeom->get_pixel_x();
+	    const double length  = layergeom->get_pixel_z();
+	    const double phisize = phibins.size() * pitch;
+	    const double zsize   = zbins.size()   * length;
+
+            TVector2 LocalUse;
+            LocalUse.SetX(locclusx);
+            LocalUse.SetY(locclusz);
+
+            auto surface = m_tGeometry->maps().getSiliconSurface(hitsetkey);
             TVector3 ClusterWorld = layergeom->get_world_from_local_coords(surface, m_tGeometry, LocalUse);
-            
-            ClusLayer.push_back(layer);
+	    
+	    ClusLayer.push_back(layer);
             ClusX.push_back(ClusterWorld.X());
             ClusY.push_back(ClusterWorld.Y());
             ClusZ.push_back(ClusterWorld.Z());
-            ClusSize.push_back(cluster->getAdc());
-            ClusSize_phi.push_back(cluster->getPhiSize());
-            ClusSize_z.push_back(cluster->getZSize());
-          }
-        }
+            ClusSize.push_back(npixels);
+            ClusSize_phi.push_back(phisize);
+            ClusSize_z.push_back(zsize);
+	  }
+	}
 
         // HeaderCableID = CableID.at(0);
         // HeaderFELIXID = FELIXID.at(0);
@@ -737,6 +716,8 @@ int PlotWorld::InitRun(PHCompositeNode* topNode)
         ClusSize.clear();
         ClusSize_phi.clear();
         ClusSize_z.clear();
+
+        delete trkrHitSetContainer;
       }
 
       fout->cd();

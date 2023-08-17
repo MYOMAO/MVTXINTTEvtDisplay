@@ -1,4 +1,4 @@
-AC_INIT(hfmltrigger, [1.00])
+AC_INIT(trackerhitmaker, [1.00])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AM_INIT_AUTOMAKE

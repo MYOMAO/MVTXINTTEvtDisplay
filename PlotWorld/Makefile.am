@@ -4,7 +4,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 lib_LTLIBRARIES = \
-   libhfmltrigger.la
+   libtrackerhitmaker.la
 
 AM_CPPFLAGS = \
   -I$(includedir) \
@@ -20,11 +20,11 @@ AM_LDFLAGS = \
 pkginclude_HEADERS = \
   PlotWorld.h 
 
-libhfmltrigger_la_SOURCES = \
+libtrackerhitmaker_la_SOURCES = \
   PlotWorld.C 
 
 
-libhfmltrigger_la_LIBADD = \
+libtrackerhitmaker_la_LIBADD = \
   -lfun4all \
   -lg4dst \
   -lg4mvtx \
@@ -51,7 +51,7 @@ testexternals_SOURCES = \
 	testexternals.C
 
 testexternals_LDADD = \
-  libhfmltrigger.la
+  libtrackerhitmaker.la
 
 testexternals.C:
 	echo "//*** this is a generated file. Do not commit, do not edit" > $@
