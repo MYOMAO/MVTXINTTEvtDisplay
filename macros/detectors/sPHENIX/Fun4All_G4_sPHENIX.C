@@ -7,6 +7,7 @@
 #include <G4Setup_sPHENIX.C>
 #include <G4_Bbc.C>
 #include <G4_CaloTrigger.C>
+#include <G4_Centrality.C>
 #include <G4_DSTReader.C>
 #include <G4_Global.C>
 #include <G4_HIJetReco.C>
@@ -16,9 +17,22 @@
 #include <G4_ParticleFlow.C>
 #include <G4_Production.C>
 #include <G4_TopoClusterReco.C>
-#include <G4_Tracking.C>
+
+#include <Trkr_RecoInit.C>
+#include <Trkr_Clustering.C>
+#include <Trkr_LaserClustering.C>
+#include <Trkr_Reco.C>
+#include <Trkr_Eval.C>
+#include <Trkr_QA.C>
+
+#include <Trkr_Diagnostics.C>
 #include <G4_User.C>
 #include <QA.C>
+
+#include <ffamodules/FlagHandler.h>
+#include <ffamodules/HeadReco.h>
+#include <ffamodules/SyncReco.h>
+#include <ffamodules/CDBInterface.h>
 
 #include <fun4all/Fun4AllDstOutputManager.h>
 #include <fun4all/Fun4AllOutputManager.h>
@@ -27,18 +41,11 @@
 #include <phool/PHRandomSeed.h>
 #include <phool/recoConsts.h>
 
-#include <chrono>       
-#include <thread> 
-
 R__LOAD_LIBRARY(libfun4all.so)
+R__LOAD_LIBRARY(libffamodules.so)
 
 // For HepMC Hijing
 // try inputFile = /sphenix/sim/sim01/sphnxpro/sHijing_HepMC/sHijing_0-12fm.dat
-
-using std::chrono::system_clock;
-using std::chrono::milliseconds;
-using std::chrono::seconds;
-using std::chrono::duration_cast;
 
 int Fun4All_G4_sPHENIX(
     const int nEvents = 1,
@@ -48,16 +55,8 @@ int Fun4All_G4_sPHENIX(
     const int skip = 0,
     const string &outdir = ".")
 {
-  std::cout << "Clock START NOW" << std::endl;
-	
-  const auto start = system_clock::now();
-
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity(0);
-
-  cout << "OK Pass 1 here" << std::endl;
-  // Set to false to generate background
-  //Enable::signal = true;
 
   //Opt to print all random seed used for debugging reproducibility. Comment out to reduce stdout prints.
   PHRandomSeed::Verbosity(1);
@@ -73,6 +72,7 @@ int Fun4All_G4_sPHENIX(
   //  rc->set_IntFlag("RANDOMSEED",PHRandomSeed());
   // or set it to a fixed value so you can debug your code
   //  rc->set_IntFlag("RANDOMSEED", 12345);
+
 
   //===============
   // Input options
@@ -103,9 +103,12 @@ int Fun4All_G4_sPHENIX(
   // Input::SIMPLE_NUMBER = 2; // if you need 2 of them
   // Input::SIMPLE_VERBOSITY = 1;
 
+  // Enable this is emulating the nominal pp/pA/AA collision vertex distribution
+  // Input::BEAM_CONFIGURATION = Input::AA_COLLISION; // Input::AA_COLLISION (default), Input::pA_COLLISION, Input::pp_COLLISION
+
   //  Input::PYTHIA6 = true;
 
-//   Input::PYTHIA8 = true;
+  // Input::PYTHIA8 = true;
 
   //  Input::GUN = true;
   //  Input::GUN_NUMBER = 3; // if you need 3 of them
@@ -144,7 +147,7 @@ int Fun4All_G4_sPHENIX(
   // add the settings for other with [1], next with [2]...
   if (Input::SIMPLE)
   {
-   INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(421, 1);
+    INPUTGENERATOR::SimpleEventGenerator[0]->add_particles(421, 1);
     if (Input::HEPMC || Input::EMBED)
     {
       INPUTGENERATOR::SimpleEventGenerator[0]->set_reuse_existing_vertex(true);
@@ -152,11 +155,11 @@ int Fun4All_G4_sPHENIX(
     }
     else
     {
-      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
-                                                                                PHG4SimpleEventGenerator::Uniform,
-                                                                                PHG4SimpleEventGenerator::Uniform);
+      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_function(PHG4SimpleEventGenerator::Gaus,
+                                                                                PHG4SimpleEventGenerator::Gaus,
+                                                                                PHG4SimpleEventGenerator::Gaus);
       INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_mean(0., 0., 0.);
-      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0., 0., 5.);
+      INPUTGENERATOR::SimpleEventGenerator[0]->set_vertex_distribution_width(0.01, 0.01, 5.);
     }
     INPUTGENERATOR::SimpleEventGenerator[0]->set_eta_range(-1, 1);
     INPUTGENERATOR::SimpleEventGenerator[0]->set_phi_range(-M_PI, M_PI);
@@ -187,24 +190,16 @@ int Fun4All_G4_sPHENIX(
     INPUTGENERATOR::Gun[0]->set_vtx(0, 0, 0);
   }
 
-/*
-if (Enable::signal == 1){
- PYTHIA8::config_file = "/sphenix/user/cdean/public/forZhaozhong/phpythia8_D02Kpi.cfg";
- }
-  else{
- PYTHIA8::config_file = "/sphenix/user/cdean/public/forZhaozhong/phpythia8.cfg";
-}
-*/
   // pythia6
   if (Input::PYTHIA6)
   {
-    //! apply sPHENIX nominal beam parameter with 2mrad crossing as defined in sPH-TRG-2020-001
+    //! Nominal collision geometry is selected by Input::BEAM_CONFIGURATION
     Input::ApplysPHENIXBeamParameter(INPUTGENERATOR::Pythia6);
   }
   // pythia8
   if (Input::PYTHIA8)
   {
-    //! apply sPHENIX nominal beam parameter with 2mrad crossing as defined in sPH-TRG-2020-001
+    //! Nominal collision geometry is selected by Input::BEAM_CONFIGURATION
     Input::ApplysPHENIXBeamParameter(INPUTGENERATOR::Pythia8);
   }
 
@@ -215,7 +210,7 @@ if (Enable::signal == 1){
 
   if (Input::HEPMC)
   {
-    //! apply sPHENIX nominal beam parameter with 2mrad crossing as defined in sPH-TRG-2020-001
+    //! Nominal collision geometry is selected by Input::BEAM_CONFIGURATION
     Input::ApplysPHENIXBeamParameter(INPUTMANAGER::HepMCInputManager);
 
     // optional overriding beam parameters
@@ -238,11 +233,27 @@ if (Enable::signal == 1){
   }
   if (Input::PILEUPRATE > 0)
   {
-    //! apply sPHENIX nominal beam parameter with 2mrad crossing as defined in sPH-TRG-2020-001
+    //! Nominal collision geometry is selected by Input::BEAM_CONFIGURATION
     Input::ApplysPHENIXBeamParameter(INPUTMANAGER::HepMCPileupInputManager);
   }
   // register all input generators with Fun4All
   InputRegister();
+
+  if (! Input::READHITS)
+  {
+    rc->set_IntFlag("RUNNUMBER",1);
+
+    SyncReco *sync = new SyncReco();
+    se->registerSubsystem(sync);
+
+    HeadReco *head = new HeadReco();
+    se->registerSubsystem(head);
+  }
+// Flag Handler is always needed to read flags from input (if used)
+// and update our rc flags with them. At the end it saves all flags
+// again on the DST in the Flags node under the RUN node
+  FlagHandler *flag = new FlagHandler();
+  se->registerSubsystem(flag);
 
   // set up production relatedstuff
   //   Enable::PRODUCTION = true;
@@ -251,8 +262,8 @@ if (Enable::signal == 1){
   // Write the DST
   //======================
 
-  Enable::DSTOUT = true;
- // Enable::DSTOUT_COMPRESS = true;
+  //Enable::DSTOUT = true;
+  Enable::DSTOUT_COMPRESS = false;
   DstOut::OutputDir = outdir;
   DstOut::OutputFile = outputFile;
 
@@ -260,7 +271,7 @@ if (Enable::signal == 1){
   //  Enable::DSTREADER = true;
 
   // turn the display on (default off)
-  //Enable::DISPLAY = true;
+   //Enable::DISPLAY = true;
 
   //======================
   // What to run
@@ -275,35 +286,50 @@ if (Enable::signal == 1){
   //  Enable::VERBOSITY = 1;
 
   // Enable::BBC = true;
-  Enable::BBCFAKE = false;  // Smeared vtx and t0, use if you don't want real BBC in simulation
+  // Enable::BBC_SUPPORT = true; // save hist in bbc support structure
+  // Enable::BBCRECO = Enable::BBC && true
+  Enable::BBCFAKE = true;  // Smeared vtx and t0, use if you don't want real BBC in simulation
 
   Enable::PIPE = true;
-  Enable::PIPE_ABSORBER = false;
+  Enable::PIPE_ABSORBER = true;
 
   // central tracking
   Enable::MVTX = true;
-  Enable::MVTX_CELL = Enable::MVTX && true;
+  Enable::MVTX_CELL = Enable::MVTX && false;
   Enable::MVTX_CLUSTER = Enable::MVTX_CELL && true;
-  Enable::MVTX_QA = Enable::MVTX_CLUSTER and Enable::QA && true;
+  Enable::MVTX_QA = Enable::MVTX_CLUSTER && Enable::QA && true;
 
   Enable::INTT = true;
+//  Enable::INTT_ABSORBER = true; // enables layerwise support structure readout
+//  Enable::INTT_SUPPORT = true; // enable global support structure readout
   Enable::INTT_CELL = Enable::INTT && true;
   Enable::INTT_CLUSTER = Enable::INTT_CELL && true;
-  Enable::INTT_QA = Enable::INTT_CLUSTER and Enable::QA && true;
+  Enable::INTT_QA = Enable::INTT_CLUSTER && Enable::QA && true;
 
   Enable::TPC = true;
-  Enable::TPC_ABSORBER = true;
+  Enable::TPC_ABSORBER = false;
   Enable::TPC_CELL = Enable::TPC && true;
   Enable::TPC_CLUSTER = Enable::TPC_CELL && true;
-  Enable::TPC_QA = Enable::TPC_CLUSTER and Enable::QA && true;
+  Enable::TPC_QA = Enable::TPC_CLUSTER && Enable::QA && true;
 
   Enable::MICROMEGAS = true;
   Enable::MICROMEGAS_CELL = Enable::MICROMEGAS && true;
   Enable::MICROMEGAS_CLUSTER = Enable::MICROMEGAS_CELL && true;
+  Enable::MICROMEGAS_QA = Enable::MICROMEGAS_CLUSTER && Enable::QA && true;
 
-  Enable::TRACKING_TRACK = false;
+  Enable::TRACKING_TRACK = (Enable::MICROMEGAS_CLUSTER && Enable::TPC_CLUSTER && Enable::INTT_CLUSTER && Enable::MVTX_CLUSTER) && true;
   Enable::TRACKING_EVAL = Enable::TRACKING_TRACK && true;
-  Enable::TRACKING_QA = Enable::TRACKING_TRACK and Enable::QA && true;
+  Enable::TRACKING_QA = Enable::TRACKING_TRACK && Enable::QA && true;
+
+  // only do track matching if TRACKINGTRACK is also used
+  Enable::TRACK_MATCHING = Enable::TRACKING_TRACK && false;
+  Enable::TRACK_MATCHING_TREE = Enable::TRACK_MATCHING && false;
+  Enable::TRACK_MATCHING_TREE_CLUSTERS = Enable::TRACK_MATCHING_TREE && false;
+
+  //Additional tracking tools 
+  //Enable::TRACKING_DIAGNOSTICS = Enable::TRACKING_TRACK && true;
+  //G4TRACKING::filter_conversion_electrons = true;
+
 
   //  cemc electronics + thin layer of W-epoxy to get albedo from cemc
   //  into the tracking, cannot run together with CEMC
@@ -314,16 +340,16 @@ if (Enable::signal == 1){
   Enable::CEMC_CELL = Enable::CEMC && true;
   Enable::CEMC_TOWER = Enable::CEMC_CELL && true;
   Enable::CEMC_CLUSTER = Enable::CEMC_TOWER && true;
-  Enable::CEMC_EVAL = Enable::CEMC_CLUSTER && true;
-  Enable::CEMC_QA = Enable::CEMC_CLUSTER and Enable::QA && true;
+  Enable::CEMC_EVAL = Enable::CEMC_G4Hit && Enable::CEMC_CLUSTER && true;
+  Enable::CEMC_QA = Enable::CEMC_CLUSTER && Enable::QA && true;
 
   Enable::HCALIN = false;
   Enable::HCALIN_ABSORBER = false;
   Enable::HCALIN_CELL = Enable::HCALIN && true;
   Enable::HCALIN_TOWER = Enable::HCALIN_CELL && true;
   Enable::HCALIN_CLUSTER = Enable::HCALIN_TOWER && true;
-  Enable::HCALIN_EVAL = Enable::HCALIN_CLUSTER && true;
-  Enable::HCALIN_QA = Enable::HCALIN_CLUSTER and Enable::QA && true;
+  Enable::HCALIN_EVAL = Enable::HCALIN_G4Hit && Enable::HCALIN_CLUSTER && true;
+  Enable::HCALIN_QA = Enable::HCALIN_CLUSTER && Enable::QA && true;
 
   Enable::MAGNET = false;
   Enable::MAGNET_ABSORBER = false;
@@ -333,27 +359,28 @@ if (Enable::signal == 1){
   Enable::HCALOUT_CELL = Enable::HCALOUT && true;
   Enable::HCALOUT_TOWER = Enable::HCALOUT_CELL && true;
   Enable::HCALOUT_CLUSTER = Enable::HCALOUT_TOWER && true;
-  Enable::HCALOUT_EVAL = Enable::HCALOUT_CLUSTER && true;
-  Enable::HCALOUT_QA = Enable::HCALOUT_CLUSTER and Enable::QA && true;
+  Enable::HCALOUT_EVAL = Enable::HCALOUT_G4Hit && Enable::HCALOUT_CLUSTER && true;
+  Enable::HCALOUT_QA = Enable::HCALOUT_CLUSTER && Enable::QA && true;
 
   Enable::EPD = false;
+  Enable::EPD_TILE = Enable::EPD && false;
 
-
-  Enable::BEAMLINE = false;
+  Enable::BEAMLINE = true;
 //  Enable::BEAMLINE_ABSORBER = true;  // makes the beam line magnets sensitive volumes
 //  Enable::BEAMLINE_BLACKHOLE = true; // turns the beamline magnets into black holes
-  Enable::ZDC = false;
+  Enable::ZDC = true;
 //  Enable::ZDC_ABSORBER = true;
 //  Enable::ZDC_SUPPORT = true;
-  Enable::ZDC_TOWER = Enable::ZDC && true;
-  Enable::ZDC_EVAL = Enable::ZDC_TOWER && true;
+  Enable::ZDC_TOWER = Enable::ZDC && false;
+  Enable::ZDC_EVAL = Enable::ZDC_TOWER && false;
 
   //! forward flux return plug door. Out of acceptance and off by default.
   //Enable::PLUGDOOR = true;
-  Enable::PLUGDOOR_ABSORBER = false;
+  Enable::PLUGDOOR_ABSORBER = true;
 
-  Enable::GLOBAL_RECO = true;
+  Enable::GLOBAL_RECO = (Enable::BBCFAKE || Enable::TRACKING_TRACK) && false;
   //Enable::GLOBAL_FASTSIM = true;
+
   //Enable::KFPARTICLE = true;
   //Enable::KFPARTICLE_VERBOSITY = 1;
   //Enable::KFPARTICLE_TRUTH_MATCH = true;
@@ -361,31 +388,39 @@ if (Enable::signal == 1){
 
   Enable::CALOTRIGGER = Enable::CEMC_TOWER && Enable::HCALIN_TOWER && Enable::HCALOUT_TOWER && false;
 
-  Enable::JETS = false;
+  Enable::JETS = (Enable::GLOBAL_RECO || Enable::GLOBAL_FASTSIM) && false;
   Enable::JETS_EVAL = Enable::JETS && true;
-  Enable::JETS_QA = Enable::JETS and Enable::QA && true;
+  Enable::JETS_QA = Enable::JETS && Enable::QA && true;
 
   // HI Jet Reco for p+Au / Au+Au collisions (default is false for
   // single particle / p+p-only simulations, or for p+Au / Au+Au
   // simulations which don't particularly care about jets)
-  Enable::HIJETS = false && Enable::JETS && Enable::CEMC_TOWER && Enable::HCALIN_TOWER && Enable::HCALOUT_TOWER;
+  Enable::HIJETS = Enable::JETS && Enable::CEMC_TOWER && Enable::HCALIN_TOWER && Enable::HCALOUT_TOWER && false;
 
   // 3-D topoCluster reconstruction, potentially in all calorimeter layers
-  Enable::TOPOCLUSTER = false && Enable::CEMC_TOWER && Enable::HCALIN_TOWER && Enable::HCALOUT_TOWER;
+  Enable::TOPOCLUSTER = Enable::CEMC_TOWER && Enable::HCALIN_TOWER && Enable::HCALOUT_TOWER && false;
   // particle flow jet reconstruction - needs topoClusters!
-  Enable::PARTICLEFLOW = false && Enable::TOPOCLUSTER;
+  Enable::PARTICLEFLOW = Enable::TOPOCLUSTER && false;
+  // centrality reconstruction
+  Enable::CENTRALITY = true;
 
   // new settings using Enable namespace in GlobalVariables.C
-  Enable::BLACKHOLE = false;
+  Enable::BLACKHOLE = true;
   //Enable::BLACKHOLE_SAVEHITS = false; // turn off saving of bh hits
+  //Enable::BLACKHOLE_FORWARD_SAVEHITS = false; // disable forward/backward hits
   //BlackHoleGeometry::visible = true;
 
   // run user provided code (from local G4_User.C)
-  Enable::USER = true;
-  Enable::USER_VERBOSITY = 0;
+  //Enable::USER = true;
 
-  std::cout << "SUCK" << std::endl;
-
+  //===============
+  // conditions DB flags
+  //===============
+  Enable::CDB = true;
+  // global tag
+  rc->set_StringFlag("CDB_GLOBALTAG",CDB::global_tag);
+  // 64 bit timestamp
+  rc->set_uint64Flag("TIMESTAMP",CDB::timestamp);
   //---------------
   // World Settings
   //---------------
@@ -396,14 +431,9 @@ if (Enable::signal == 1){
   // Magnet Settings
   //---------------
 
-  //  const string magfield = "1.5"; // alternatively to specify a constant magnetic field, give a float number, which will be translated to solenoidal field in T, if string use as fieldmap name (including path)
   //  G4MAGNET::magfield =  string(getenv("CALIBRATIONROOT"))+ string("/Field/Map/sphenix3dbigmapxyz.root");  // default map from the calibration database
+  //  G4MAGNET::magfield = "1.5"; // alternatively to specify a constant magnetic field, give a float number, which will be translated to solenoidal field in T, if string use as fieldmap name (including path)
 //  G4MAGNET::magfield_rescale = 1.;  // make consistent with expected Babar field strength of 1.4T
-  
-//magfield_rescale = 0;
-   G4MAGNET::magfield_rescale = 1.;  // make consistent with expected Babar field strength of 1.4T
-  
-
 
   //---------------
   // Pythia Decayer
@@ -428,7 +458,7 @@ if (Enable::signal == 1){
   // Detector Division
   //------------------
 
-  if (Enable::BBC || Enable::BBCFAKE) Bbc_Reco();
+  if ((Enable::BBC && Enable::BBCRECO) || Enable::BBCFAKE) Bbc_Reco();
 
   if (Enable::MVTX_CELL) Mvtx_Cells();
   if (Enable::INTT_CELL) Intt_Cells();
@@ -447,6 +477,12 @@ if (Enable::signal == 1){
 
   if (Enable::CEMC_TOWER) CEMC_Towers();
   if (Enable::CEMC_CLUSTER) CEMC_Clusters();
+
+  //--------------
+  // EPD tile reconstruction
+  //--------------
+
+  if (Enable::EPD_TILE) EPD_Tiles();
 
   //-----------------------------
   // HCAL towering and clustering
@@ -470,13 +506,36 @@ if (Enable::signal == 1){
     }
   if (Enable::MVTX_CLUSTER) Mvtx_Clustering();
   if (Enable::INTT_CLUSTER) Intt_Clustering();
-  if (Enable::TPC_CLUSTER) TPC_Clustering();
+  if (Enable::TPC_CLUSTER)
+    {
+      if(G4TPC::ENABLE_DIRECT_LASER_HITS || G4TPC::ENABLE_CENTRAL_MEMBRANE_HITS)
+	{
+	  TPC_LaserClustering();
+	}
+      else
+	{
+	  TPC_Clustering();
+	}
+    }
   if (Enable::MICROMEGAS_CLUSTER) Micromegas_Clustering();
 
   if (Enable::TRACKING_TRACK)
   {
     Tracking_Reco();
   }
+
+  
+
+  if(Enable::TRACKING_DIAGNOSTICS)
+    {
+      const std::string kshortFile = "./kshort_" + outputFile;
+      const std::string residualsFile = "./residuals_" + outputFile;
+ 
+      G4KshortReconstruction(kshortFile);
+      seedResiduals(residualsFile);
+    }
+
+
   //-----------------
   // Global Vertexing
   //-----------------
@@ -493,6 +552,15 @@ if (Enable::signal == 1){
   else if (Enable::GLOBAL_FASTSIM)
   {
     Global_FastSim();
+  }
+
+  //-----------------
+  // Centrality Determination
+  //-----------------
+
+  if (Enable::CENTRALITY)
+  {
+      Centrality();
   }
 
   //-----------------
@@ -535,16 +603,25 @@ if (Enable::signal == 1){
   if (Enable::JETS_EVAL) Jet_Eval(outputroot + "_g4jet_eval.root");
 
   if (Enable::DSTREADER) G4DSTreader(outputroot + "_DSTReader.root");
-//  QA_G4Decayer();
+
+
 
   if (Enable::USER) UserAnalysisInit();
+  
+  std::cout << "Run My Own Codes" << std::endl;
+  UserAnalysisInit();
+  std::cout << "Run Pass My Codes" << std::endl;
+
+  // Writes electrons from conversions to a new track map on the node tree
+  // the ntuple file is for diagnostics, it is produced only if the flag is set in G4_Tracking.C
+  if(G4TRACKING::filter_conversion_electrons) Filter_Conversion_Electrons(outputroot + "_secvert_ntuple.root");
+
 
   //======================
   // Run KFParticle on evt
   //======================
-  //if (Enable::KFPARTICLE && Input::UPSILON) KFParticle_Upsilon_Reco();
-  //if (Enable::KFPARTICLE && Input::DZERO) KFParticle_D0_Reco();
-  //if (Enable::KFPARTICLE && Input::LAMBDAC) KFParticle_Lambdac_Reco();
+//  if (Enable::KFPARTICLE && Input::UPSILON) KFParticle_Upsilon_Reco();
+//  if (Enable::KFPARTICLE && Input::DZERO) KFParticle_D0_Reco();
 
   //----------------------
   // Standard QAs
@@ -559,9 +636,12 @@ if (Enable::signal == 1){
   if (Enable::MVTX_QA) Mvtx_QA();
   if (Enable::INTT_QA) Intt_QA();
   if (Enable::TPC_QA) TPC_QA();
+  if (Enable::MICROMEGAS_QA) Micromegas_QA();
   if (Enable::TRACKING_QA) Tracking_QA();
 
-  if (Enable::TRACKING_QA and Enable::CEMC_QA and Enable::HCALIN_QA and Enable::HCALOUT_QA) QA_G4CaloTracking();
+  if (Enable::TRACKING_QA && Enable::CEMC_QA && Enable::HCALIN_QA && Enable::HCALOUT_QA) QA_G4CaloTracking();
+
+  if (Enable::TRACK_MATCHING) Track_Matching(outputroot + "_g4trackmatching.root");
 
   //--------------
   // Set up Input Managers
@@ -610,15 +690,13 @@ if (Enable::signal == 1){
     return 0;
   }
   // if we run the particle generator and use 0 it'll run forever
-  if (nEvents == 0 && !Input::HEPMC && !Input::READHITS)
+  // for embedding it runs forever if the repeat flag is set
+  if (nEvents == 0 && !Input::HEPMC && !Input::READHITS && INPUTEMBED::REPEAT)
   {
     cout << "using 0 for number of events is a bad idea when using particle generators" << endl;
     cout << "it will run forever, so I just return without running anything" << endl;
     return 0;
   }
-  
-//  QA_G4Decayer();
-
 
   se->skip(skip);
   se->run(nEvents);
@@ -627,15 +705,15 @@ if (Enable::signal == 1){
   // QA output
   //-----
 
-//  if (Enable::QA) QA_Output(outputroot + "_qa.root");
-  if (Enable::QA) QA_Output("ZZ_qa.root");
+  if (Enable::QA) QA_Output(outputroot + "_qa.root");
+
   //-----
   // Exit
   //-----
 
+//  CDBInterface::instance()->Print(); // print used DB files
   se->End();
   std::cout << "All done" << std::endl;
-/*
   delete se;
   if (Enable::PRODUCTION)
   {
@@ -643,14 +721,6 @@ if (Enable::signal == 1){
   }
 
   gSystem->Exit(0);
-*/
-  
-  std::cout << "Clock STOP NOW" << std::endl;
-  const auto stop = system_clock::now();
-
-  std::chrono::duration<double> diff = stop - start;
-  std::cout << "Duration:  " << diff.count() << "  seconds" << std::endl;
-  
   return 0;
 }
 #endif

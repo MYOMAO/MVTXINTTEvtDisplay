@@ -191,6 +191,7 @@ int PlotWorld::Init(PHCompositeNode* topNode)
 
   if (DetectorType == 0) DetName = "MVTX";
   if (DetectorType == 1) DetName = "INTT";
+  m_run_clusterizer = true;
 
   // Basically Copy Pasted Codes Here
 

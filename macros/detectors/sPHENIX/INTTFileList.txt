@@ -1,4 +1,0 @@
-/sphenix/user/zshi/INTTData/SingleBeam/beam_intt0-00020402-0000_event_base.root
-/sphenix/user/zshi/INTTData/SingleBeam/beam_intt0-00020403-0000_event_base.root
-/sphenix/user/zshi/INTTData/SingleBeam/beam_intt3-00020402-0000_event_base.root
-/sphenix/user/zshi/INTTData/SingleBeam/beam_intt3-00020403-0000_event_base.root

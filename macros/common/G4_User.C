@@ -6,7 +6,7 @@
 #include "../../PlotWorld/PlotWorld.h"
 
 R__LOAD_LIBRARY(libfun4all.so)
-R__LOAD_LIBRARY(libhfmltrigger.so)
+R__LOAD_LIBRARY(libtrackerhitmaker.so)
 
 
 class PHG4Reco;

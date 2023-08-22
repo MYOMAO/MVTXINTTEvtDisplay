@@ -11,7 +11,9 @@ echo "-------------- CHANGING SOFTWARE NOW BRO --------------------"
 
 #source /opt/sphenix/core/bin/sphenix_setup.csh -n ana.346
 
-source /opt/sphenix/core/bin/sphenix_setup.csh -n  ana.355
+#source /opt/sphenix/core/bin/sphenix_setup.csh -n  ana.355
+
+source /opt/sphenix/core/bin/sphenix_setup.csh -n  new
 
 rm -r install
 
